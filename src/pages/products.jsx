@@ -1,0 +1,475 @@
+import React, { useState, useEffect } from 'react';
+import { getAllProducts, createProduct, updateProduct, deleteProduct } from '../services/productService';
+import { useRole } from '../hooks/useRole';
+import Card from '../components/card';
+import Button from '../components/button';
+import Table from '../components/table';
+import Modal from '../components/modal';
+
+export const Products = () => {
+  const { isAdmin } = useRole();
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+
+  // Modal control states
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState('create'); // 'create' or 'edit'
+  const [currentProduct, setCurrentProduct] = useState(null);
+  const [formLoading, setFormLoading] = useState(false);
+
+  // Form states
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    price: '',
+    stock: '',
+    category: '',
+    image_url: ''
+  });
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const data = await getAllProducts();
+      setProducts(data || []);
+    } catch (error) {
+      console.error('Error fetching inventory products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const categories = ['All', ...new Set(products.map(p => p.category).filter(Boolean))];
+
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(search.toLowerCase()) || 
+                          (product.description && product.description.toLowerCase().includes(search.toLowerCase())) ||
+                          (product.category && product.category.toLowerCase().includes(search.toLowerCase()));
+    const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  // Open modal for creating new item
+  const handleOpenCreate = () => {
+    setFormData({
+      name: '',
+      description: '',
+      price: '',
+      stock: '0',
+      category: '',
+      image_url: ''
+    });
+    setModalMode('create');
+    setIsModalOpen(true);
+  };
+
+  // Open modal for editing existing item
+  const handleOpenEdit = (product) => {
+    setCurrentProduct(product);
+    setFormData({
+      name: product.name,
+      description: product.description || '',
+      price: product.price.toString(),
+      stock: product.stock.toString(),
+      category: product.category || '',
+      image_url: product.image_url || ''
+    });
+    setModalMode('edit');
+    setIsModalOpen(true);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.name || !formData.price) {
+      alert('Product Name and Price are required.');
+      return;
+    }
+
+    const payload = {
+      name: formData.name,
+      description: formData.description || null,
+      price: parseFloat(formData.price),
+      stock: parseInt(formData.stock) || 0,
+      category: formData.category || null,
+      image_url: formData.image_url || null
+    };
+
+    try {
+      setFormLoading(true);
+      if (modalMode === 'create') {
+        await createProduct(payload);
+      } else {
+        await updateProduct(currentProduct.id, payload);
+      }
+      setIsModalOpen(false);
+      await fetchProducts();
+    } catch (error) {
+      console.error('Error saving product:', error);
+      alert('Failed to save product. Please check inputs.');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to permanently delete this product?')) {
+      return;
+    }
+
+    try {
+      await deleteProduct(id);
+      await fetchProducts();
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      alert('Failed to delete product.');
+    }
+  };
+
+  const renderStockProgress = (stock) => {
+    const maxBarVal = 50; // Arbitrary value for visual fullness
+    const percent = Math.min((stock / maxBarVal) * 100, 100);
+    
+    let color = 'var(--color-success)';
+    if (stock === 0) color = 'var(--color-danger)';
+    else if (stock <= 5) color = 'var(--color-warning)';
+
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: '120px' }}>
+        <div style={{
+          flex: 1,
+          height: '6px',
+          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+          borderRadius: '3px',
+          overflow: 'hidden'
+        }}>
+          <div style={{
+            width: `${percent}%`,
+            height: '100%',
+            backgroundColor: color,
+            borderRadius: '3px',
+            boxShadow: `0 0 8px ${color}`
+          }} />
+        </div>
+        <span style={{ fontSize: '0.8rem', fontWeight: '700', color: stock === 0 ? 'var(--color-danger)' : stock <= 5 ? 'var(--color-warning)' : '#ffffff' }}>
+          {stock}
+        </span>
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }} className="animate-fade-in">
+      
+      {/* Search filters and Add button */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '16px'
+      }}>
+        <div>
+          <h1 style={{ fontSize: '1.8rem', marginBottom: '4px' }}>Inventory Catalog</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
+            {isAdmin ? 'Create, view, edit or delete items.' : 'View current items in stock.'}
+          </p>
+        </div>
+
+        {isAdmin && (
+          <Button
+            id="add-product-btn"
+            variant="primary"
+            icon={<span>➕</span>}
+            onClick={handleOpenCreate}
+          >
+            Add New Product
+          </Button>
+        )}
+      </div>
+
+      {/* Filter panel */}
+      <Card style={{ padding: '16px' }}>
+        <div style={{
+          display: 'flex',
+          gap: '16px',
+          flexWrap: 'wrap',
+          alignItems: 'center'
+        }}>
+          <div style={{ position: 'relative', flex: 1, minWidth: '250px' }}>
+            <input
+              id="inventory-search-input"
+              type="text"
+              placeholder="Search catalog by name or details..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ paddingLeft: '40px' }}
+            />
+            <span style={{ position: 'absolute', left: '16px', top: '13px', color: 'var(--text-muted)' }}>🔍</span>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto' }}>
+            {categories.map(category => (
+              <button
+                key={category}
+                id={`filter-category-${category.toLowerCase()}`}
+                onClick={() => setSelectedCategory(category)}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '20px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '0.8rem',
+                  fontWeight: '600',
+                  backgroundColor: selectedCategory === category ? 'var(--primary-color)' : 'rgba(255, 255, 255, 0.04)',
+                  color: selectedCategory === category ? '#ffffff' : 'var(--text-secondary)',
+                  transition: 'var(--transition-fast)'
+                }}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+        </div>
+      </Card>
+
+      {/* Catalog Table */}
+      <Card padding="0px" style={{ overflow: 'hidden' }}>
+        <Table
+          headers={
+            isAdmin 
+              ? ['ID', 'Product Info', 'Category', 'Price', 'Stock Level', 'Actions']
+              : ['ID', 'Product Info', 'Category', 'Price', 'Stock Level']
+          }
+          loading={loading}
+          emptyMessage="No products registered in the inventory."
+        >
+          {filteredProducts.map((product) => (
+            <tr
+              key={product.id}
+              id={`inventory-row-${product.id}`}
+              style={{
+                borderBottom: '1px solid rgba(255, 255, 255, 0.03)',
+                transition: 'var(--transition-fast)'
+              }}
+              className="table-row-hover"
+            >
+              {/* ID */}
+              <td style={{ padding: '16px 20px', color: 'var(--text-muted)', fontWeight: '600' }}>
+                #{product.id}
+              </td>
+
+              {/* Product Info */}
+              <td style={{ padding: '16px 20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(255,255,255,0.02)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                    border: '1px solid rgba(255,255,255,0.04)',
+                    flexShrink: 0
+                  }}>
+                    {product.image_url ? (
+                      <img src={product.image_url} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <span style={{ fontSize: '1.2rem' }}>🍎</span>
+                    )}
+                  </div>
+                  <div>
+                    <h4 style={{ fontSize: '0.92rem', margin: 0 }}>{product.name}</h4>
+                    <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '2px 0 0 0', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {product.description || 'No description provided.'}
+                    </p>
+                  </div>
+                </div>
+              </td>
+
+              {/* Category */}
+              <td style={{ padding: '16px 20px' }}>
+                {product.category ? (
+                  <span style={{
+                    padding: '3px 10px',
+                    borderRadius: '20px',
+                    fontSize: '0.75rem',
+                    fontWeight: '600',
+                    backgroundColor: 'rgba(255,255,255,0.04)',
+                    color: 'var(--text-secondary)'
+                  }}>
+                    {product.category}
+                  </span>
+                ) : (
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Unclassified</span>
+                )}
+              </td>
+
+              {/* Price */}
+              <td style={{ padding: '16px 20px', fontWeight: '800', color: '#ffffff', fontSize: '0.95rem' }}>
+                ${product.price.toFixed(2)}
+              </td>
+
+              {/* Stock Progress bar */}
+              <td style={{ padding: '16px 20px' }}>
+                {renderStockProgress(product.stock)}
+              </td>
+
+              {/* Actions (Admin Only) */}
+              {isAdmin && (
+                <td style={{ padding: '16px 20px' }}>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <Button
+                      id={`edit-btn-${product.id}`}
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleOpenEdit(product)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      id={`delete-btn-${product.id}`}
+                      variant="danger"
+                      size="sm"
+                      onClick={() => handleDelete(product.id)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </td>
+              )}
+            </tr>
+          ))}
+        </Table>
+      </Card>
+
+      {/* CREATE & EDIT DIALOG MODAL (Admin Only) */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={modalMode === 'create' ? '📦 Register New Product' : `✏️ Edit Product #${currentProduct?.id}`}
+      >
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div>
+            <label htmlFor="name">Product Name *</label>
+            <input
+              id="product-form-name"
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              placeholder="e.g. Organic Milk"
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="description">Description</label>
+            <textarea
+              id="product-form-desc"
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              placeholder="e.g. 1 Litre fresh organic whole milk bottle"
+              rows={3}
+              style={{ resize: 'vertical' }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <div style={{ flex: 1 }}>
+              <label htmlFor="price">Price ($) *</label>
+              <input
+                id="product-form-price"
+                type="number"
+                step="0.01"
+                min="0"
+                name="price"
+                value={formData.price}
+                onChange={handleInputChange}
+                placeholder="0.00"
+                required
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label htmlFor="stock">Stock Count</label>
+              <input
+                id="product-form-stock"
+                type="number"
+                min="0"
+                name="stock"
+                value={formData.stock}
+                onChange={handleInputChange}
+                placeholder="0"
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <div style={{ flex: 1 }}>
+              <label htmlFor="category">Category</label>
+              <input
+                id="product-form-category"
+                type="text"
+                name="category"
+                value={formData.category}
+                onChange={handleInputChange}
+                placeholder="e.g. Dairy, Grocery"
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label htmlFor="image_url">Image URL</label>
+              <input
+                id="product-form-img"
+                type="url"
+                name="image_url"
+                value={formData.image_url}
+                onChange={handleInputChange}
+                placeholder="https://example.com/milk.jpg"
+              />
+            </div>
+          </div>
+
+          <div style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: '12px',
+            marginTop: '20px',
+            borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+            paddingTop: '16px'
+          }}>
+            <Button
+              id="product-form-cancel"
+              variant="secondary"
+              onClick={() => setIsModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              id="product-form-submit"
+              type="submit"
+              variant="primary"
+              loading={formLoading}
+            >
+              {modalMode === 'create' ? 'Create Product' : 'Save Changes'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+    </div>
+  );
+};
+
+export default Products;
