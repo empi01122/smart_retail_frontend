@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
 :root {
   /* Dynamic Brand Theme variables - updated by SettingsContext */
   --primary-color: #4f46e5;
@@ -13,6 +15,13 @@
   --text-primary: #f3f4f6;
   --text-secondary: #9ca3af;
   --text-muted: #6b7280;
+  
+  --bg-sidebar: rgba(11, 15, 25, 0.95);
+  --border-sidebar: rgba(255, 255, 255, 0.08);
+  --glass-card-bg: rgba(255, 255, 255, 0.02);
+  --glass-card-border: rgba(255, 255, 255, 0.04);
+  --input-bg: rgba(255, 255, 255, 0.03);
+  --input-border: rgba(255, 255, 255, 0.08);
   
   /* Status Colors */
   --color-success: #10b981;
@@ -39,7 +48,7 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -96,9 +105,10 @@ body::after {
 
 /* Typography & Headers */
 h1, h2, h3, h4, h5, h6 {
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: #ffffff;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-primary, #ffffff);
 }
 
 h1 { font-size: 2.2rem; line-height: 1.2; }
@@ -128,8 +138,8 @@ a {
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: var(--glass-card-bg, rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--glass-card-border, rgba(255, 255, 255, 0.04));
   border-radius: var(--radius-sm);
   padding: 16px;
   transition: var(--transition-fast);
@@ -185,10 +195,10 @@ select,
 textarea {
   width: 100%;
   padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--input-bg, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--input-border, rgba(255, 255, 255, 0.08));
   border-radius: var(--radius-sm);
-  color: #ffffff;
+  color: var(--text-primary, #ffffff);
   font-size: 0.95rem;
   transition: var(--transition-fast);
   outline: none;
@@ -314,9 +324,9 @@ label {
   display: flex;
   flex-direction: column;
   z-index: 100;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-sidebar, rgba(255, 255, 255, 0.08));
   box-shadow: var(--shadow-lg);
-  background: rgba(11, 15, 25, 0.95);
+  background: var(--bg-sidebar, rgba(11, 15, 25, 0.95));
   transition: var(--transition-smooth);
 }
 
@@ -430,8 +440,8 @@ label {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(9, 13, 22, 0.95) 100%);
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.15) 0%, var(--bg-app) 100%);
+  border-right: 1px solid var(--bg-surface-border);
   z-index: 1;
   position: relative;
 }
@@ -440,5 +450,65 @@ label {
   .login-left-pane {
     display: none !important;
   }
+}
+
+/* Sidebar Navigation Links */
+.sidebar-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  color: var(--text-secondary) !important;
+  font-weight: 500;
+  font-size: 0.92rem;
+  transition: var(--transition-fast);
+  background-color: transparent;
+  text-decoration: none;
+}
+
+.sidebar-nav-link:hover {
+  background-color: var(--glass-card-bg) !important;
+  color: var(--text-primary) !important;
+}
+
+.sidebar-nav-link.active {
+  color: #ffffff !important;
+  background-color: var(--primary-color) !important;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(var(--primary-color-rgb), 0.25) !important;
+}
+
+.sidebar-nav-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+/* Logout Button Styling */
+.logout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.08) !important;
+  border: 1px solid rgba(239, 68, 68, 0.15) !important;
+  color: var(--color-danger) !important;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  width: 100%;
+}
+
+.logout-btn:hover {
+  background: var(--color-danger) !important;
+  color: #ffffff !important;
+}
+
+.logout-btn-icon {
+  display: inline-flex;
+  align-items: center;
 }
 

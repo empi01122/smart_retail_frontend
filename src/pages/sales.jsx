@@ -57,7 +57,7 @@ export const Sales = () => {
       }}>
         <Card title="Total Revenue" style={{ padding: '20px' }}>
           <h2 style={{ fontSize: '2rem', color: 'var(--accent-color)', margin: '4px 0 0 0' }}>
-            ${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} FCFA
           </h2>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Gross store transactions</span>
         </Card>
@@ -77,8 +77,8 @@ export const Sales = () => {
         </Card>
 
         <Card title="Avg Basket Value" style={{ padding: '20px' }}>
-          <h2 style={{ fontSize: '2rem', color: '#ffffff', margin: '4px 0 0 0' }}>
-            ${averageBasketValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <h2 style={{ fontSize: '2rem', color: 'var(--text-primary)', margin: '4px 0 0 0' }}>
+            {averageBasketValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} FCFA
           </h2>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Mean sale size</span>
         </Card>
@@ -120,13 +120,13 @@ export const Sales = () => {
                   </td>
 
                   {/* Items Count */}
-                  <td style={{ padding: '16px 20px', color: '#ffffff', fontWeight: '500' }}>
+                  <td style={{ padding: '16px 20px', color: 'var(--text-primary)', fontWeight: '500' }}>
                     {itemsCount} {itemsCount === 1 ? 'item' : 'items'}
                   </td>
 
                   {/* Gross Total */}
                   <td style={{ padding: '16px 20px', fontWeight: '800', color: 'var(--accent-color)' }}>
-                    ${sale.total_amount.toFixed(2)}
+                    {sale.total_amount.toFixed(2)} FCFA
                   </td>
 
                   {/* Inspect Details Button */}
@@ -149,19 +149,19 @@ export const Sales = () => {
                 {isExpanded && (
                   <tr>
                     <td colSpan={5} style={{
-                      backgroundColor: 'rgba(5, 8, 16, 0.4)',
+                      backgroundColor: 'var(--bg-app)',
                       padding: '20px 40px',
-                      borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                      borderBottom: '1px solid var(--border-sidebar)',
                     }}>
                       <div className="animate-slide-up" style={{
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '12px',
                       }}>
-                        <h4 style={{ fontSize: '0.85rem', color: '#ffffff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        <h4 style={{ fontSize: '0.85rem', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                           Basket breakdown:
                         </h4>
-
+ 
                         <div style={{
                           display: 'flex',
                           flexDirection: 'column',
@@ -177,21 +177,22 @@ export const Sales = () => {
                                   justifyContent: 'space-between',
                                   alignItems: 'center',
                                   padding: '8px 12px',
-                                  backgroundColor: 'rgba(255,255,255,0.02)',
+                                  backgroundColor: 'var(--glass-card-bg)',
+                                  border: '1px solid var(--glass-card-border)',
                                   borderRadius: '8px',
                                   fontSize: '0.85rem'
                                 }}
                               >
                                 <div>
-                                  <span style={{ fontWeight: '600', color: '#ffffff' }}>
+                                  <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>
                                     {item.product_name || `Product #${item.product_id}`}
                                   </span>
                                   <span style={{ color: 'var(--text-muted)', marginLeft: '8px' }}>
-                                    (x{item.quantity} units @ ${item.unit_price.toFixed(2)})
+                                    (x{item.quantity} units @ {item.unit_price.toFixed(2)} FCFA)
                                   </span>
                                 </div>
-                                <span style={{ fontWeight: '700', color: '#ffffff' }}>
-                                  ${(item.quantity * item.unit_price).toFixed(2)}
+                                <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>
+                                  {(item.quantity * item.unit_price).toFixed(2)} FCFA
                                 </span>
                               </div>
                             ))

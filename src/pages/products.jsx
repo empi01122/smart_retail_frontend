@@ -89,6 +89,45 @@ export const Products = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleProductFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 500; // Optimal width for product grid display
+          const MAX_HEIGHT = 500;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Compress to medium-quality JPEG
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          setFormData(prev => ({ ...prev, image_url: compressedDataUrl }));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name || !formData.price) {
@@ -231,7 +270,7 @@ export const Products = () => {
                   cursor: 'pointer',
                   fontSize: '0.8rem',
                   fontWeight: '600',
-                  backgroundColor: selectedCategory === category ? 'var(--primary-color)' : 'rgba(255, 255, 255, 0.04)',
+                  backgroundColor: selectedCategory === category ? 'var(--primary-color)' : 'var(--glass-card-bg)',
                   color: selectedCategory === category ? '#ffffff' : 'var(--text-secondary)',
                   transition: 'var(--transition-fast)'
                 }}
@@ -259,7 +298,7 @@ export const Products = () => {
               key={product.id}
               id={`inventory-row-${product.id}`}
               style={{
-                borderBottom: '1px solid rgba(255, 255, 255, 0.03)',
+                borderBottom: '1px solid var(--border-sidebar)',
                 transition: 'var(--transition-fast)'
               }}
               className="table-row-hover"
@@ -276,12 +315,12 @@ export const Products = () => {
                     width: '40px',
                     height: '40px',
                     borderRadius: '8px',
-                    backgroundColor: 'rgba(255,255,255,0.02)',
+                    backgroundColor: 'var(--glass-card-bg)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     overflow: 'hidden',
-                    border: '1px solid rgba(255,255,255,0.04)',
+                    border: '1px solid var(--glass-card-border)',
                     flexShrink: 0
                   }}>
                     {product.image_url ? (
@@ -307,7 +346,7 @@ export const Products = () => {
                     borderRadius: '20px',
                     fontSize: '0.75rem',
                     fontWeight: '600',
-                    backgroundColor: 'rgba(255,255,255,0.04)',
+                    backgroundColor: 'var(--glass-card-bg)',
                     color: 'var(--text-secondary)'
                   }}>
                     {product.category}
@@ -318,8 +357,8 @@ export const Products = () => {
               </td>
 
               {/* Price */}
-              <td style={{ padding: '16px 20px', fontWeight: '800', color: '#ffffff', fontSize: '0.95rem' }}>
-                ${product.price.toFixed(2)}
+              <td style={{ padding: '16px 20px', fontWeight: '800', color: 'var(--text-primary)', fontSize: '0.95rem' }}>
+                {product.price.toFixed(2)} FCFA
               </td>
 
               {/* Stock Progress bar */}
@@ -390,7 +429,7 @@ export const Products = () => {
 
           <div style={{ display: 'flex', gap: '16px' }}>
             <div style={{ flex: 1 }}>
-              <label htmlFor="price">Price ($) *</label>
+              <label htmlFor="price">Price (FCFA) *</label>
               <input
                 id="product-form-price"
                 type="number"
@@ -429,16 +468,66 @@ export const Products = () => {
                 placeholder="e.g. Dairy, Grocery"
               />
             </div>
-            <div style={{ flex: 1 }}>
-              <label htmlFor="image_url">Image URL</label>
-              <input
-                id="product-form-img"
-                type="url"
-                name="image_url"
-                value={formData.image_url}
-                onChange={handleInputChange}
-                placeholder="https://example.com/milk.jpg"
-              />
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label>Product Image</label>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <div 
+                  onClick={() => document.getElementById('product-file-input').click()}
+                  style={{
+                    width: '50px',
+                    height: '50px',
+                    borderRadius: '8px',
+                    border: '2px dashed rgba(255, 255, 255, 0.15)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    overflow: 'hidden',
+                    backgroundColor: 'var(--glass-card-bg)',
+                    transition: 'var(--transition-fast)',
+                    flexShrink: 0
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--primary-color)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)'; }}
+                >
+                  {formData.image_url ? (
+                    <img 
+                      src={formData.image_url} 
+                      alt="Product Preview" 
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                    />
+                  ) : (
+                    <span style={{ fontSize: '1.1rem' }}>📸</span>
+                  )}
+                </div>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <input 
+                    id="product-file-input"
+                    type="file" 
+                    accept="image/*"
+                    onChange={handleProductFileChange}
+                    style={{ display: 'none' }}
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => document.getElementById('product-file-input').click()}
+                    style={{ alignSelf: 'flex-start', padding: '4px 10px', fontSize: '0.75rem' }}
+                  >
+                    📁 Choose Photo
+                  </Button>
+                  <input
+                    id="product-form-img"
+                    type="text"
+                    name="image_url"
+                    value={formData.image_url}
+                    onChange={handleInputChange}
+                    placeholder="Or paste image URL here..."
+                    style={{ fontSize: '0.8rem', padding: '6px 10px', margin: 0 }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -447,7 +536,7 @@ export const Products = () => {
             justifyContent: 'flex-end',
             gap: '12px',
             marginTop: '20px',
-            borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+            borderTop: '1px solid var(--border-sidebar)',
             paddingTop: '16px'
           }}>
             <Button

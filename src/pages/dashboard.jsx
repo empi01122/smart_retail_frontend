@@ -96,7 +96,7 @@ export const Dashboard = () => {
       const isHeader = line.startsWith('**') && line.endsWith('**') && parts.length === 3;
       if (isHeader) {
         return (
-          <h4 key={idx} style={{ fontSize: '0.98rem', fontWeight: '700', marginTop: '16px', marginBottom: '10px', color: '#ffffff', borderLeft: '3px solid var(--primary-color)', paddingLeft: '10px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+          <h4 key={idx} style={{ fontSize: '0.98rem', fontWeight: '700', marginTop: '16px', marginBottom: '10px', color: 'var(--primary-color)', borderLeft: '3px solid var(--primary-color)', paddingLeft: '10px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
             {parts[1]}
           </h4>
         );
@@ -147,7 +147,7 @@ export const Dashboard = () => {
             <div className="shimmer-bg" style={{ height: '38px', borderRadius: '6px', margin: '4px 0' }} />
           ) : (
             <h2 style={{ fontSize: '2.2rem', color: 'var(--accent-color)', margin: '4px 0' }}>
-              ${summary?.total_revenue?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
+              {summary?.total_revenue?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'} FCFA
             </h2>
           )}
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Gross sales receipts</span>
@@ -226,12 +226,12 @@ export const Dashboard = () => {
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
                         <span style={{ fontWeight: '600' }}>{idx + 1}. {p.product}</span>
                         <span style={{ color: 'var(--text-secondary)', fontWeight: 'bold' }}>
-                          {p.units_sold} sold <span style={{ color: 'var(--text-muted)', fontWeight: 'normal' }}>(${p.revenue.toFixed(2)})</span>
+                          {p.units_sold} sold <span style={{ color: 'var(--text-muted)', fontWeight: 'normal' }}>({p.revenue.toFixed(2)} FCFA)</span>
                         </span>
                       </div>
                       <div style={{
                         height: '8px',
-                        backgroundColor: 'rgba(255,255,255,0.03)',
+                        backgroundColor: 'var(--glass-card-bg)',
                         borderRadius: '4px',
                         overflow: 'hidden'
                       }}>
@@ -289,10 +289,10 @@ export const Dashboard = () => {
               </div>
             ) : (
               <div style={{
-                backgroundColor: 'rgba(5, 8, 16, 0.4)',
+                backgroundColor: 'var(--glass-card-bg)',
                 borderRadius: '12px',
                 padding: '20px',
-                border: '1px solid rgba(255, 255, 255, 0.04)',
+                border: '1px solid var(--glass-card-border)',
                 maxHeight: '350px',
                 overflowY: 'auto'
               }}>

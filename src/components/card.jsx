@@ -32,7 +32,7 @@ export const Card = ({
           gap: '16px',
         }}>
           <div>
-            {title && <h3 style={{ fontSize: '1.2rem', fontWeight: '700', color: '#ffffff' }}>{title}</h3>}
+            {title && <h3 style={{ fontSize: '1.2rem', fontWeight: '700', color: 'var(--text-primary)' }}>{title}</h3>}
             {subtitle && <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginTop: '4px' }}>{subtitle}</p>}
           </div>
           {actions && <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>{actions}</div>}

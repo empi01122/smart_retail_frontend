@@ -17,6 +17,7 @@ export const Settings = () => {
   // Branding Form states
   const [brandingForm, setBrandingForm] = useState({
     store_name: '',
+    logo_url: '',
     primary_theme_color: '',
     secondary_theme_color: '',
     accent_theme_color: ''
@@ -44,6 +45,7 @@ export const Settings = () => {
     if (currentSettings) {
       setBrandingForm({
         store_name: currentSettings.store_name || '',
+        logo_url: currentSettings.logo_url || '',
         primary_theme_color: currentSettings.primary_theme_color || '',
         secondary_theme_color: currentSettings.secondary_theme_color || '',
         accent_theme_color: currentSettings.accent_theme_color || ''
@@ -96,6 +98,45 @@ export const Settings = () => {
   const handleBrandingChange = (e) => {
     const { name, value } = e.target;
     setBrandingForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleLogoFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 400; // Keep logo size compact
+          const MAX_HEIGHT = 400;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Compress to lightweight JPEG data URL
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.75);
+          setBrandingForm(prev => ({ ...prev, logo_url: compressedDataUrl }));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSaveBranding = async (e) => {
@@ -205,7 +246,7 @@ export const Settings = () => {
       {/* Tabs Menu Selection */}
       <div style={{
         display: 'flex',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+        borderBottom: '1px solid var(--border-sidebar)',
         gap: '10px'
       }}>
         <button
@@ -216,14 +257,19 @@ export const Settings = () => {
             background: 'transparent',
             border: 'none',
             borderBottom: activeTab === 'branding' ? '3px solid var(--primary-color)' : '3px solid transparent',
-            color: activeTab === 'branding' ? '#ffffff' : 'var(--text-secondary)',
+            color: activeTab === 'branding' ? 'var(--text-primary)' : 'var(--text-secondary)',
             fontWeight: '600',
             cursor: 'pointer',
             transition: 'var(--transition-fast)',
-            fontSize: '0.92rem'
+            fontSize: '0.92rem',
+            display: 'flex',
+            alignItems: 'center'
           }}
         >
-          🎨 Custom Store Branding
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '18px', height: '18px', display: 'inline-block', verticalAlign: 'middle', marginRight: '8px' }}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402M4.098 19.902a3.75 3.75 0 015.304 0l6.401-6.402M4.098 19.902l1.498-1.498m5.304 5.304l-1.498-1.498m1.498-5.304l-1.498-1.498m10.158-1.472a1.5 1.5 0 11-2.122-2.122l.504-.504a1.5 1.5 0 112.122 2.122l-.504.504z" />
+          </svg>
+          <span>Store Branding</span>
         </button>
         {isAdmin && (
           <button
@@ -234,14 +280,19 @@ export const Settings = () => {
               background: 'transparent',
               border: 'none',
               borderBottom: activeTab === 'staff' ? '3px solid var(--primary-color)' : '3px solid transparent',
-              color: activeTab === 'staff' ? '#ffffff' : 'var(--text-secondary)',
+              color: activeTab === 'staff' ? 'var(--text-primary)' : 'var(--text-secondary)',
               fontWeight: '600',
               cursor: 'pointer',
               transition: 'var(--transition-fast)',
-              fontSize: '0.92rem'
+              fontSize: '0.92rem',
+              display: 'flex',
+              alignItems: 'center'
             }}
           >
-            👥 Staff Accounts Panel
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '18px', height: '18px', display: 'inline-block', verticalAlign: 'middle', marginRight: '8px' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+            </svg>
+            <span>Staff Accounts</span>
           </button>
         )}
       </div>
@@ -268,18 +319,87 @@ export const Settings = () => {
               )}
 
               <form onSubmit={handleSaveBranding} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div>
-                  <label htmlFor="store_name">Store Name</label>
-                  <input
-                    id="settings-store-name"
-                    type="text"
-                    name="store_name"
-                    value={brandingForm.store_name}
-                    onChange={handleBrandingChange}
-                    placeholder="Smart Retail Shop"
-                    disabled={!isAdmin}
-                    required
-                  />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+                  <div>
+                    <label htmlFor="store_name">Store Name</label>
+                    <input
+                      id="settings-store-name"
+                      type="text"
+                      name="store_name"
+                      value={brandingForm.store_name}
+                      onChange={handleBrandingChange}
+                      placeholder="Smart Retail Shop"
+                      disabled={!isAdmin}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label>Store Logo</label>
+                    <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <div 
+                        onClick={() => isAdmin && document.getElementById('logo-file-input').click()}
+                        style={{
+                          width: '70px',
+                          height: '70px',
+                          borderRadius: '10px',
+                          border: '2px dashed rgba(255, 255, 255, 0.15)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: isAdmin ? 'pointer' : 'default',
+                          overflow: 'hidden',
+                          backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                          transition: 'var(--transition-fast)',
+                          position: 'relative'
+                        }}
+                        onMouseEnter={(e) => { if (isAdmin) e.currentTarget.style.borderColor = 'var(--primary-color)'; }}
+                        onMouseLeave={(e) => { if (isAdmin) e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)'; }}
+                      >
+                        {brandingForm.logo_url ? (
+                          <img 
+                            src={brandingForm.logo_url} 
+                            alt="Logo Preview" 
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                          />
+                        ) : (
+                          <span style={{ fontSize: '1.4rem' }}>📸</span>
+                        )}
+                      </div>
+
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '200px' }}>
+                        {isAdmin && (
+                          <>
+                            <input 
+                              id="logo-file-input"
+                              type="file" 
+                              accept="image/*"
+                              onChange={handleLogoFileChange}
+                              style={{ display: 'none' }}
+                            />
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => document.getElementById('logo-file-input').click()}
+                              style={{ alignSelf: 'flex-start', padding: '6px 12px', fontSize: '0.8rem' }}
+                            >
+                              📷 Choose Logo File
+                            </Button>
+                          </>
+                        )}
+                        <input
+                          id="settings-store-logo"
+                          type="text"
+                          name="logo_url"
+                          value={brandingForm.logo_url}
+                          onChange={handleBrandingChange}
+                          placeholder="Or paste direct image URL here..."
+                          disabled={!isAdmin}
+                          style={{ fontSize: '0.85rem', margin: 0 }}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '16px' }}>

@@ -180,7 +180,7 @@ export const Storefront = () => {
                   cursor: 'pointer',
                   fontSize: '0.82rem',
                   fontWeight: '600',
-                  backgroundColor: selectedCategory === category ? 'var(--primary-color)' : 'rgba(255, 255, 255, 0.04)',
+                  backgroundColor: selectedCategory === category ? 'var(--primary-color)' : 'var(--glass-card-bg)',
                   color: selectedCategory === category ? '#ffffff' : 'var(--text-secondary)',
                   transition: 'var(--transition-fast)'
                 }}
@@ -220,8 +220,8 @@ export const Storefront = () => {
                   id={`product-card-${product.id}`}
                   onClick={() => !outOfStock && addToCart(product)}
                   style={{
-                    backgroundColor: 'rgba(17, 24, 39, 0.4)',
-                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                    backgroundColor: 'var(--glass-card-bg)',
+                    border: '1px solid var(--glass-card-border)',
                     borderRadius: '16px',
                     padding: '16px',
                     cursor: outOfStock ? 'not-allowed' : 'pointer',
@@ -235,14 +235,14 @@ export const Storefront = () => {
                   onMouseEnter={(e) => {
                     if (!outOfStock) {
                       e.currentTarget.style.transform = 'translateY(-3px)';
-                      e.currentTarget.style.borderColor = 'rgba(var(--primary-color-rgb), 0.2)';
-                      e.currentTarget.style.backgroundColor = 'rgba(17, 24, 39, 0.6)';
+                      e.currentTarget.style.borderColor = 'var(--primary-color)';
+                      e.currentTarget.style.backgroundColor = 'var(--input-bg)';
                     }
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)';
-                    e.currentTarget.style.backgroundColor = 'rgba(17, 24, 39, 0.4)';
+                    e.currentTarget.style.borderColor = 'var(--glass-card-border)';
+                    e.currentTarget.style.backgroundColor = 'var(--glass-card-bg)';
                   }}
                 >
                   {/* Category Pill */}
@@ -276,7 +276,7 @@ export const Storefront = () => {
                     border: '1px solid rgba(255,255,255,0.03)'
                   }}>
                     {product.image_url ? (
-                      <img src={product.image_url} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={product.image_url} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }} />
                     ) : (
                       <span style={{ fontSize: '2rem' }}>🍎</span>
                     )}
@@ -301,8 +301,8 @@ export const Storefront = () => {
                   </p>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
-                    <span style={{ fontWeight: '800', color: '#ffffff', fontSize: '1.05rem' }}>
-                      ${product.price.toFixed(2)}
+                    <span style={{ fontWeight: '800', color: 'var(--text-primary)', fontSize: '1.05rem' }}>
+                      {product.price.toFixed(2)} FCFA
                     </span>
                     
                     {/* Stock status indicator */}
@@ -326,7 +326,7 @@ export const Storefront = () => {
         <Card
           title="Shopping Cart"
           subtitle="Customer selection ledger"
-          style={{ height: '100%', background: 'rgba(11, 15, 25, 0.95)', border: '1px solid rgba(255,255,255,0.08)' }}
+          style={{ height: '100%', background: 'var(--bg-sidebar)', border: '1px solid var(--border-sidebar)' }}
           actions={
             cart.length > 0 && (
               <button
@@ -377,8 +377,8 @@ export const Storefront = () => {
                       alignItems: 'center',
                       gap: '12px',
                       padding: '10px 12px',
-                      backgroundColor: 'rgba(255,255,255,0.02)',
-                      border: '1px solid rgba(255,255,255,0.04)',
+                      backgroundColor: 'var(--glass-card-bg)',
+                      border: '1px solid var(--glass-card-border)',
                       borderRadius: '12px'
                     }}
                   >
@@ -387,7 +387,7 @@ export const Storefront = () => {
                         {item.product.name}
                       </h4>
                       <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                        ${item.product.price.toFixed(2)} each
+                        {item.product.price.toFixed(2)} FCFA each
                       </span>
                     </div>
 
@@ -399,9 +399,9 @@ export const Storefront = () => {
                           width: '24px',
                           height: '24px',
                           borderRadius: '6px',
-                          border: 'none',
-                          backgroundColor: 'rgba(255,255,255,0.05)',
-                          color: '#ffffff',
+                          border: '1px solid var(--glass-card-border)',
+                          backgroundColor: 'var(--glass-card-bg)',
+                          color: 'var(--text-primary)',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
@@ -421,11 +421,11 @@ export const Storefront = () => {
                           width: '40px',
                           padding: '2px',
                           textAlign: 'center',
-                          backgroundColor: 'rgba(0,0,0,0.2)',
-                          border: 'none',
+                          backgroundColor: 'var(--glass-card-bg)',
+                          border: '1px solid var(--glass-card-border)',
                           borderRadius: '4px',
                           fontSize: '0.85rem',
-                          color: '#ffffff'
+                          color: 'var(--text-primary)'
                         }}
                       />
 
@@ -435,9 +435,9 @@ export const Storefront = () => {
                           width: '24px',
                           height: '24px',
                           borderRadius: '6px',
-                          border: 'none',
-                          backgroundColor: 'rgba(255,255,255,0.05)',
-                          color: '#ffffff',
+                          border: '1px solid var(--glass-card-border)',
+                          backgroundColor: 'var(--glass-card-bg)',
+                          color: 'var(--text-primary)',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
@@ -452,7 +452,7 @@ export const Storefront = () => {
 
                     <div style={{ textAlign: 'right', minWidth: '60px' }}>
                       <span style={{ fontWeight: '700', fontSize: '0.88rem' }}>
-                        ${(item.product.price * item.quantity).toFixed(2)}
+                        {(item.product.price * item.quantity).toFixed(2)} FCFA
                       </span>
                     </div>
                   </div>
@@ -471,11 +471,11 @@ export const Storefront = () => {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
               <span style={{ color: 'var(--text-secondary)' }}>Subtotal</span>
-              <span>${cartTotal.toFixed(2)}</span>
+              <span>{cartTotal.toFixed(2)} FCFA</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
               <span style={{ color: 'var(--text-secondary)' }}>Tax (0%)</span>
-              <span>$0.00</span>
+              <span>0.00 FCFA</span>
             </div>
             
             <div style={{
@@ -483,12 +483,12 @@ export const Storefront = () => {
               justifyContent: 'space-between',
               fontSize: '1.25rem',
               fontWeight: '800',
-              borderTop: '1px dotted rgba(255,255,255,0.08)',
+              borderTop: '1px dotted var(--border-sidebar)',
               paddingTop: '12px',
               marginBottom: '10px'
             }}>
               <span>Total</span>
-              <span style={{ color: 'var(--accent-color)' }}>${cartTotal.toFixed(2)}</span>
+              <span style={{ color: 'var(--accent-color)' }}>{cartTotal.toFixed(2)} FCFA</span>
             </div>
 
             <Button
@@ -520,16 +520,16 @@ export const Storefront = () => {
         {receipt && (
           <div style={{
             fontFamily: 'monospace',
-            backgroundColor: '#0a0d14',
-            color: '#c0caf5',
+            backgroundColor: 'var(--bg-sidebar)',
+            color: 'var(--text-primary)',
             padding: '24px',
             borderRadius: '12px',
-            border: '1px solid rgba(255,255,255,0.05)',
+            border: '1px solid var(--border-sidebar)',
             fontSize: '0.85rem',
             lineHeight: 1.5
           }}>
             <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-              <h2 style={{ fontSize: '1.1rem', color: '#ffffff', fontFamily: 'inherit', margin: '0 0 4px 0' }}>
+              <h2 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', fontFamily: 'inherit', margin: '0 0 4px 0' }}>
                 SMART RETAIL TERMINAL
               </h2>
               <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.75rem' }}>
@@ -540,22 +540,22 @@ export const Storefront = () => {
             <p style={{ margin: '0 0 4px 0' }}><strong>RECEIPT ID:</strong> #{receipt.id}</p>
             <p style={{ margin: '0 0 16px 0' }}><strong>DATE:</strong> {new Date(receipt.created_at).toLocaleString()}</p>
             
-            <div style={{ borderBottom: '1px dashed rgba(255,255,255,0.1)', marginBottom: '12px' }} />
+            <div style={{ borderBottom: '1px dashed var(--border-sidebar)', marginBottom: '12px' }} />
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
               {receipt.items?.map((item) => (
                 <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span>{item.product_name || `Product #${item.product_id}`} (x{item.quantity})</span>
-                  <span>${(item.unit_price * item.quantity).toFixed(2)}</span>
+                  <span>{(item.unit_price * item.quantity).toFixed(2)} FCFA</span>
                 </div>
               ))}
             </div>
 
-            <div style={{ borderBottom: '1px dashed rgba(255,255,255,0.1)', marginBottom: '12px' }} />
+            <div style={{ borderBottom: '1px dashed var(--border-sidebar)', marginBottom: '12px' }} />
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.05rem', color: '#ffffff', fontWeight: 'bold' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.05rem', color: 'var(--text-primary)', fontWeight: 'bold' }}>
               <span>TOTAL AMOUNT</span>
-              <span>${receipt.total_amount.toFixed(2)}</span>
+              <span>{receipt.total_amount.toFixed(2)} FCFA</span>
             </div>
 
             <div style={{ textAlign: 'center', marginTop: '30px', color: 'var(--text-muted)', fontSize: '0.75rem' }}>

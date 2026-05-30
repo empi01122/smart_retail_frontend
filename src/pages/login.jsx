@@ -2,10 +2,12 @@ import React, { useEffect } from 'react';
 import { SignIn, useAuth as useClerkAuth } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useSettings } from '../hooks/useSettings';
 import Button from '../components/button';
 
 export const Login = () => {
   const { isAuthenticated, loginBypass, loading } = useAuth();
+  const { settings } = useSettings();
   const clerkAuth = useClerkAuth();
   const navigate = useNavigate();
 
@@ -83,18 +85,24 @@ export const Login = () => {
               width: '42px',
               height: '42px',
               borderRadius: '12px',
-              backgroundColor: 'var(--primary-color)',
+              backgroundColor: settings?.logo_url ? 'transparent' : 'var(--primary-color)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: '1.4rem',
               fontWeight: '800',
-              boxShadow: '0 4px 15px rgba(var(--primary-color-rgb), 0.4)'
+              boxShadow: settings?.logo_url ? 'none' : '0 4px 15px rgba(var(--primary-color-rgb), 0.4)',
+              overflow: 'hidden',
+              border: settings?.logo_url ? '1px solid var(--bg-surface-border)' : 'none'
             }}>
-              S
+              {settings?.logo_url ? (
+                <img src={settings.logo_url} alt={settings.store_name || "Logo"} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              ) : (
+                settings?.store_name ? settings.store_name[0].toUpperCase() : 'S'
+              )}
             </div>
             <div>
-              <h2 style={{ fontSize: '1.25rem', margin: 0, fontWeight: 800 }}>Smart Retail</h2>
+              <h2 style={{ fontSize: '1.25rem', margin: 0, fontWeight: 800 }}>{settings?.store_name || 'Smart Retail'}</h2>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Management Hub</span>
             </div>
           </div>

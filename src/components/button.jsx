@@ -45,11 +45,11 @@ export const Button = ({
       },
     },
     secondary: {
-      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-      border: '1px solid rgba(255, 255, 255, 0.08)',
-      color: '#ffffff',
+      backgroundColor: 'var(--glass-card-bg, rgba(255, 255, 255, 0.05))',
+      border: '1px solid var(--glass-card-border, rgba(255, 255, 255, 0.08))',
+      color: 'var(--text-primary, #ffffff)',
       ':hover': {
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        backgroundColor: 'var(--input-bg, rgba(255, 255, 255, 0.1))',
         transform: 'translateY(-1px)',
       },
     },
