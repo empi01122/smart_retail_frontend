@@ -4,6 +4,11 @@ import Card from '../components/card';
 import Table from '../components/table';
 import Button from '../components/button';
 
+const titleCase = (text) => {
+  if (!text || typeof text !== 'string') return '';
+  return text.trim().split(/\s+/).map(word => word[0]?.toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+};
+
 export const Sales = () => {
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -185,7 +190,7 @@ export const Sales = () => {
                               >
                                 <div>
                                   <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>
-                                    {item.product_name || `Product #${item.product_id}`}
+                                    {titleCase(item.product_name) || `Product #${item.product_id}`}
                                   </span>
                                   <span style={{ color: 'var(--text-muted)', marginLeft: '8px' }}>
                                     (x{item.quantity} units @ {item.unit_price.toFixed(2)} FCFA)

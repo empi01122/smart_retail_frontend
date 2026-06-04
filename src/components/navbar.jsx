@@ -55,7 +55,8 @@ export const Navbar = () => {
       name: 'Metrics & Insights', 
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '20px', height: '20px' }}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v5.25c0 .621-.504 1.125-1.125 1.125h-2.25A1.125 1.125 0 013 18.375v-5.25zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125v-9.75zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v14.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 19h4V10H4v9zM10 19h4V5h-4v14zM16 19h4V14h-4v5z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 10l4 4 4-8 4 6 4-4" />
         </svg>
       ), 
       roles: ['admin', 'employee'] 

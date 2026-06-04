@@ -5,6 +5,11 @@ import Card from '../components/card';
 import Button from '../components/button';
 import Modal from '../components/modal';
 
+const titleCase = (text) => {
+  if (!text || typeof text !== 'string') return '';
+  return text.trim().split(/\s+/).map(word => word[0]?.toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+};
+
 export const Storefront = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -162,7 +167,7 @@ export const Storefront = () => {
                   border: '1px solid rgba(255, 255, 255, 0.06)'
                 }}
               />
-              <span style={{ position: 'absolute', left: '16px', top: '13px', fontSize: '1rem', color: 'var(--text-muted)' }}>🔍</span>
+              <span style={{ position: 'absolute', left: '16px', top: '13px', fontSize: '1rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '20px', height: '20px' }}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.5 5.5a7.5 7.5 0 0010.5 10.5z" /></svg></span>
             </div>
           </div>
 
@@ -198,7 +203,7 @@ export const Storefront = () => {
           </div>
         ) : filteredProducts.length === 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '350px', background: 'rgba(255, 255, 255, 0.01)', border: '1px dotted rgba(255,255,255,0.08)', borderRadius: '16px' }}>
-            <span style={{ fontSize: '3rem', marginBottom: '10px' }}>📦</span>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '56px', height: '56px', marginBottom: '10px', color: 'var(--text-muted)' }}><path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m6 4.125l2.25 2.25m0 0l2.25 2.25M12 13.875l2.25-2.25M12 13.875l-2.25 2.25M15 12H9" /></svg>
             <p style={{ color: 'var(--text-muted)' }}>No products match your criteria.</p>
           </div>
         ) : (
@@ -278,12 +283,12 @@ export const Storefront = () => {
                     {product.image_url ? (
                       <img src={product.image_url} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }} />
                     ) : (
-                      <span style={{ fontSize: '2rem' }}>🍎</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '48px', height: '48px', color: 'var(--text-muted)' }}><path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m6 4.125l2.25 2.25m0 0l2.25 2.25M12 13.875l2.25-2.25M12 13.875l-2.25 2.25M15 12H9" /></svg>
                     )}
                   </div>
 
-                  <h3 style={{ fontSize: '0.95rem', margin: '0 0 6px 0', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                    {product.name}
+                  <h3 style={{ fontSize: '0.95rem', margin: '0 0 6px 0', wordBreak: 'break-word', overflowWrap: 'anywhere', whiteSpace: 'normal' }}>
+                    {titleCase(product.name)}
                   </h3>
 
                   <p style={{
@@ -292,10 +297,9 @@ export const Storefront = () => {
                     margin: '0 0 12px 0',
                     lineHeight: '1.3',
                     flexGrow: 1,
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden',
+                    whiteSpace: 'normal',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'anywhere'
                   }}>
                     {product.description || 'No description provided.'}
                   </p>
@@ -364,7 +368,7 @@ export const Storefront = () => {
           <div style={{ flex: 1, overflowY: 'auto', marginBottom: '20px', paddingRight: '4px' }}>
             {cart.length === 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '220px', color: 'var(--text-muted)' }}>
-                <span style={{ fontSize: '2.5rem', marginBottom: '10px' }}>🛒</span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '48px', height: '48px', marginBottom: '10px', color: 'var(--text-muted)' }}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" /></svg>
                 <p style={{ fontSize: '0.85rem' }}>Basket is empty. Select products to begin.</p>
               </div>
             ) : (
@@ -383,9 +387,14 @@ export const Storefront = () => {
                     }}
                   >
                     <div style={{ flex: 1, overflow: 'hidden' }}>
-                      <h4 style={{ fontSize: '0.85rem', margin: 0, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                        {item.product.name}
+                      <h4 style={{ fontSize: '0.85rem', margin: 0, wordBreak: 'break-word', overflowWrap: 'anywhere', whiteSpace: 'normal', lineHeight: 1.3 }}>
+                        {titleCase(item.product.name)}
                       </h4>
+                      {item.product.description && (
+                        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '2px 0 4px 0', wordBreak: 'break-word', whiteSpace: 'normal', lineHeight: 1.2, overflow: 'visible' }}>
+                          {item.product.description}
+                        </p>
+                      )}
                       <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
                         {item.product.price.toFixed(2)} FCFA each
                       </span>
@@ -529,9 +538,12 @@ export const Storefront = () => {
             lineHeight: 1.5
           }}>
             <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-              <h2 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', fontFamily: 'inherit', margin: '0 0 4px 0' }}>
-                SMART RETAIL TERMINAL
-              </h2>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '24px', height: '24px', marginRight: '8px' }}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                <h2 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', fontFamily: 'inherit', margin: 0 }}>
+                  SMART RETAIL TERMINAL
+                </h2>
+              </div>
               <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.75rem' }}>
                 Transaction Receipt
               </p>

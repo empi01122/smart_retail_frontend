@@ -200,7 +200,14 @@ export const Dashboard = () => {
         {/* Left Side: Top Products List */}
         <div style={{ flex: 1, minWidth: '320px' }}>
           <Card
-            title="🔥 Best Selling Items"
+            title={
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '20px', height: '20px' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 17h16M7 13v4m5-10v10m5-6v6" />
+                </svg>
+                Best Selling Items
+              </span>
+            }
             subtitle="Top 5 catalog products ranked by sales quantity"
             style={{ height: '100%' }}
           >
@@ -254,7 +261,14 @@ export const Dashboard = () => {
         {/* Right Side: Gemini AI Business insights report */}
         <div style={{ flex: 1.3, minWidth: '350px' }}>
           <Card
-            title="🔮 Gemini AI Insights"
+            title={
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '20px', height: '20px' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v3m0 12v3m9-9h-3M6 12H3m15.364-6.364l-2.121 2.121M8.757 15.243l-2.121 2.121M18.364 18.364l-2.121-2.121M8.757 8.757l-2.121-2.121" />
+                </svg>
+                Gemini AI Insights
+              </span>
+            }
             subtitle="Automated shop analysis & health diagnostics"
             actions={
               <Button

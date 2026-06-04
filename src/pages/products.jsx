@@ -6,6 +6,11 @@ import Button from '../components/button';
 import Table from '../components/table';
 import Modal from '../components/modal';
 
+const titleCase = (text) => {
+  if (!text || typeof text !== 'string') return '';
+  return text.trim().split(/\s+/).map(word => word[0]?.toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+};
+
 export const Products = () => {
   const { isAdmin } = useRole();
   const [products, setProducts] = useState([]);
@@ -229,7 +234,7 @@ export const Products = () => {
           <Button
             id="add-product-btn"
             variant="primary"
-            icon={<span>➕</span>}
+            icon={<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '18px', height: '18px' }}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>}
             onClick={handleOpenCreate}
           >
             Add New Product
@@ -254,7 +259,7 @@ export const Products = () => {
               onChange={(e) => setSearch(e.target.value)}
               style={{ paddingLeft: '40px' }}
             />
-            <span style={{ position: 'absolute', left: '16px', top: '13px', color: 'var(--text-muted)' }}>🔍</span>
+            <span style={{ position: 'absolute', left: '16px', top: '13px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '18px', height: '18px' }}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.5 5.5a7.5 7.5 0 0010.5 10.5z" /></svg></span>
           </div>
 
           <div style={{ display: 'flex', gap: '8px', overflowX: 'auto' }}>
@@ -326,12 +331,14 @@ export const Products = () => {
                     {product.image_url ? (
                       <img src={product.image_url} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
-                      <span style={{ fontSize: '1.2rem' }}>🍎</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '24px', height: '24px', color: 'var(--text-muted)' }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 7.5h18M6 7.5v13.5a1.5 1.5 0 001.5 1.5h9a1.5 1.5 0 001.5-1.5V7.5M9 7.5V4.5a1.5 1.5 0 011.5-1.5h3A1.5 1.5 0 0115 4.5v3" />
+                      </svg>
                     )}
                   </div>
                   <div>
-                    <h4 style={{ fontSize: '0.92rem', margin: 0 }}>{product.name}</h4>
-                    <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '2px 0 0 0', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    <h4 style={{ fontSize: '0.92rem', margin: 0, wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{titleCase(product.name)}</h4>
+                    <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '2px 0 0 0', whiteSpace: 'normal', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                       {product.description || 'No description provided.'}
                     </p>
                   </div>
