@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { getStoreSettings, updateStoreSettings, getThemes, applyTheme, getInspiration } from '../services/settingsService';
+import { getStoreSettings, updateStoreSettings, getThemes, applyTheme, getInspiration, upgradeEnterpriseSubscription } from '../services/settingsService';
 import { getStaff, syncStaff, deleteStaff } from '../services/staffService';
 import { useRole } from '../hooks/useRole';
 import { useSettings } from '../hooks/useSettings';
 import Card from '../components/card';
 import Button from '../components/button';
 import Table from '../components/table';
+import Modal from '../components/modal';
+import { WarningIcon } from '../components/icons';
 
 export const Settings = () => {
-  const { isAdmin, user: loggedInUser } = useRole();
-  const { settings: currentSettings, refreshSettings } = useSettings();
+  const { isAdmin, isTechnician, isActualTechnician, user: loggedInUser } = useRole();
+  const isSystemTech = isTechnician || isActualTechnician;
+  const { settings: currentSettings, refreshSettings, applyThemeStyles } = useSettings();
   
   // Tab states
   const [activeTab, setActiveTab] = useState('branding'); // 'branding' or 'staff'
@@ -30,8 +33,24 @@ export const Settings = () => {
   const [inspirations, setInspirations] = useState([]);
   const [themesLoading, setThemesLoading] = useState(true);
 
+  // Subscription States
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeTier, setUpgradeTier] = useState(''); // 'pro' or 'ultra'
+  const [upgradePhone, setUpgradePhone] = useState('');
+  const [upgradeError, setUpgradeError] = useState('');
+  const [upgradeStep, setUpgradeStep] = useState('input'); // 'input' | 'processing' | 'success'
+
   // Staff states
   const [staffList, setStaffList] = useState([]);
+
+  // Derived settings and limits (placed after state declarations to avoid ReferenceErrors)
+  const subTier = isSystemTech ? 'ultra' : (currentSettings?.subscription_tier || 'free');
+  const themeChangesCount = currentSettings?.theme_changes_count || 0;
+  const isBrandingDisabled = !isAdmin || (!isSystemTech && (subTier === 'free' || (subTier === 'pro' && themeChangesCount >= 1)));
+  
+  const staffCount = staffList.filter(s => s.role === 'employee').length;
+  const isStaffDisabled = !isAdmin || (!isSystemTech && ((subTier === 'free' && staffCount >= 1) || (subTier === 'pro' && staffCount >= 2)));
+
   const [staffLoading, setStaffLoading] = useState(false);
   const [addStaffForm, setAddStaffForm] = useState({
     name: '',
@@ -52,6 +71,15 @@ export const Settings = () => {
       });
     }
   }, [currentSettings]);
+
+  // Reset theme styles back to saved settings if unmounted (discarding unsaved picker previews)
+  useEffect(() => {
+    return () => {
+      if (currentSettings && applyThemeStyles) {
+        applyThemeStyles(currentSettings);
+      }
+    };
+  }, [currentSettings, applyThemeStyles]);
 
   // Load theme presets and design tools
   useEffect(() => {
@@ -97,7 +125,13 @@ export const Settings = () => {
   // Branding updates
   const handleBrandingChange = (e) => {
     const { name, value } = e.target;
-    setBrandingForm(prev => ({ ...prev, [name]: value }));
+    setBrandingForm(prev => {
+      const updated = { ...prev, [name]: value };
+      if (applyThemeStyles) {
+        applyThemeStyles(updated);
+      }
+      return updated;
+    });
   };
 
   const handleLogoFileChange = (e) => {
@@ -131,7 +165,13 @@ export const Settings = () => {
 
           // Compress to lightweight JPEG data URL
           const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.75);
-          setBrandingForm(prev => ({ ...prev, logo_url: compressedDataUrl }));
+          setBrandingForm(prev => {
+            const updated = { ...prev, logo_url: compressedDataUrl };
+            if (applyThemeStyles) {
+              applyThemeStyles(updated);
+            }
+            return updated;
+          });
         };
         img.src = reader.result;
       };
@@ -145,7 +185,8 @@ export const Settings = () => {
     setBrandingSuccess(false);
 
     try {
-      await updateStoreSettings(brandingForm);
+      const activeEntId = localStorage.getItem('active_enterprise_id');
+      await updateStoreSettings(brandingForm, activeEntId);
       await refreshSettings();
       setBrandingSuccess(true);
       setTimeout(() => setBrandingSuccess(false), 3000);
@@ -157,6 +198,68 @@ export const Settings = () => {
     }
   };
 
+  // Subscription handlers
+  const handleOpenUpgradeModal = (tier) => {
+    setUpgradeTier(tier);
+    setUpgradePhone('');
+    setUpgradeError('');
+    setUpgradeStep('input');
+    setShowUpgradeModal(true);
+  };
+
+  const handleUpgradeSubscription = async (e) => {
+    if (e) e.preventDefault();
+    const phoneVal = upgradePhone.trim();
+    if (!phoneVal) {
+      setUpgradeError('Please enter a Cameroonian Mobile Money number.');
+      return;
+    }
+
+    // Cameroon MoMo phone number validation (starts with 6, exactly 9 digits)
+    let localPhone = phoneVal;
+    if (phoneVal.startsWith('+237')) {
+      localPhone = phoneVal.slice(4);
+    } else if (phoneVal.startsWith('237')) {
+      localPhone = phoneVal.slice(3);
+    }
+    localPhone = localPhone.replace(/[\s\-]/g, '');
+
+    if (!/^\d+$/.test(localPhone)) {
+      setUpgradeError('Phone number must contain only digits.');
+      return;
+    }
+    if (localPhone.length !== 9) {
+      setUpgradeError('Cameroon phone number must be exactly 9 digits.');
+      return;
+    }
+    if (!/^6[5-9]\d{7}$/.test(localPhone)) {
+      setUpgradeError('Invalid Cameroon phone number. Must start with 6 followed by 5, 7, 8, or 9.');
+      return;
+    }
+
+    setUpgradeError('');
+    setUpgradeStep('processing');
+
+    try {
+      // Simulate payment delay (2.5 seconds)
+      await new Promise(resolve => setTimeout(resolve, 2500));
+      
+      const activeEntId = localStorage.getItem('active_enterprise_id');
+      await upgradeEnterpriseSubscription(activeEntId, localPhone, upgradeTier);
+      
+      setUpgradeStep('success');
+      await refreshSettings();
+      
+      setTimeout(() => {
+        setShowUpgradeModal(false);
+      }, 1500);
+    } catch (error) {
+      console.error('Failed to upgrade subscription:', error);
+      setUpgradeStep('input');
+      setUpgradeError(error.response?.data?.detail || 'Failed to complete simulated payment. Please try again.');
+    }
+  };
+
   // Precurated themes applier
   const handleApplyPreset = async (themeId) => {
     if (!confirm('Apply this brand theme preset globally? This will immediately transform the colors of all screens.')) {
@@ -165,7 +268,12 @@ export const Settings = () => {
     
     try {
       setBrandingLoading(true);
-      await applyTheme(themeId);
+      const theme = curatedThemes.find(t => t.id === themeId);
+      if (theme && applyThemeStyles) {
+        applyThemeStyles(theme);
+      }
+      const activeEntId = localStorage.getItem('active_enterprise_id');
+      await applyTheme(themeId, activeEntId);
       await refreshSettings();
       setBrandingSuccess(true);
       setTimeout(() => setBrandingSuccess(false), 3000);
@@ -247,7 +355,12 @@ export const Settings = () => {
       <div style={{
         display: 'flex',
         borderBottom: '1px solid var(--border-sidebar)',
-        gap: '10px'
+        gap: '10px',
+        overflowX: 'auto',
+        whiteSpace: 'nowrap',
+        scrollbarWidth: 'none', /* Firefox */
+        msOverflowStyle: 'none', /* IE 10+ */
+        paddingBottom: '2px'
       }}>
         <button
           id="tab-branding-btn"
@@ -304,6 +417,35 @@ export const Settings = () => {
           {/* Custom Theme configuration form */}
           <div style={{ flex: 1.2, minWidth: '320px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <Card title="Custom Colors & Identity" subtitle="Define custom colors matching your exact corporate signature.">
+              {subTier === 'free' && (
+                <div style={{
+                  padding: '12px',
+                  backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                  border: '1px solid rgba(245, 158, 11, 0.25)',
+                  borderRadius: '8px',
+                  color: '#f59e0b',
+                  fontSize: '0.8rem',
+                  marginBottom: '16px',
+                  lineHeight: 1.4
+                }}>
+                   <strong>Premium Branding Locked:</strong> Custom branding colors are locked on the Free Trial. Please upgrade to Pro or Ultra in the subscription panel.
+                </div>
+              )}
+              {subTier === 'pro' && themeChangesCount >= 1 && (
+                <div style={{
+                  padding: '12px',
+                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.2)',
+                  borderRadius: '8px',
+                  color: '#f87171',
+                  fontSize: '0.8rem',
+                  marginBottom: '16px',
+                  lineHeight: 1.4
+                }}>
+                   <strong>Branding Customization Limit Reached:</strong> Pro subscriptions are limited to exactly 1 custom theme branding edit, which you have already used. Upgrade to Ultra for unlimited theme edits.
+                </div>
+              )}
+
               {brandingSuccess && (
                 <div style={{
                   padding: '10px 14px',
@@ -312,9 +454,15 @@ export const Settings = () => {
                   borderRadius: '8px',
                   color: 'var(--color-success)',
                   fontSize: '0.82rem',
-                  marginBottom: '16px'
+                  marginBottom: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
                 }}>
-                  ✅ Branding configuration saved and applied globally!
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{ width: '14px', height: '14px', color: 'var(--color-success)' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                  <span>Branding configuration saved and applied globally!</span>
                 </div>
               )}
 
@@ -362,7 +510,10 @@ export const Settings = () => {
                             style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                           />
                         ) : (
-                          <span style={{ fontSize: '1.4rem' }}>📸</span>
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '24px', height: '24px', color: 'var(--text-muted)' }}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15a2.25 2.25 0 002.25-2.25V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                          </svg>
                         )}
                       </div>
 
@@ -381,9 +532,15 @@ export const Settings = () => {
                               variant="secondary"
                               size="sm"
                               onClick={() => document.getElementById('logo-file-input').click()}
+                              icon={
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '12px', height: '12px' }}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15a2.25 2.25 0 002.25-2.25V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                              }
                               style={{ alignSelf: 'flex-start', padding: '6px 12px', fontSize: '0.8rem' }}
                             >
-                              📷 Choose Logo File
+                              Choose Logo File
                             </Button>
                           </>
                         )}
@@ -412,8 +569,8 @@ export const Settings = () => {
                         name="primary_theme_color"
                         value={brandingForm.primary_theme_color}
                         onChange={handleBrandingChange}
-                        disabled={!isAdmin}
-                        style={{ width: '40px', height: '40px', padding: '2px', cursor: 'pointer', flexShrink: 0 }}
+                        disabled={isBrandingDisabled}
+                        style={{ width: '40px', height: '40px', padding: '2px', cursor: isBrandingDisabled ? 'not-allowed' : 'pointer', flexShrink: 0 }}
                       />
                       <input
                         id="settings-color-primary-hex"
@@ -421,7 +578,7 @@ export const Settings = () => {
                         name="primary_theme_color"
                         value={brandingForm.primary_theme_color}
                         onChange={handleBrandingChange}
-                        disabled={!isAdmin}
+                        disabled={isBrandingDisabled}
                         placeholder="#000000"
                         style={{ fontSize: '0.85rem' }}
                       />
@@ -437,8 +594,8 @@ export const Settings = () => {
                         name="secondary_theme_color"
                         value={brandingForm.secondary_theme_color}
                         onChange={handleBrandingChange}
-                        disabled={!isAdmin}
-                        style={{ width: '40px', height: '40px', padding: '2px', cursor: 'pointer', flexShrink: 0 }}
+                        disabled={isBrandingDisabled}
+                        style={{ width: '40px', height: '40px', padding: '2px', cursor: isBrandingDisabled ? 'not-allowed' : 'pointer', flexShrink: 0 }}
                       />
                       <input
                         id="settings-color-secondary-hex"
@@ -446,7 +603,7 @@ export const Settings = () => {
                         name="secondary_theme_color"
                         value={brandingForm.secondary_theme_color}
                         onChange={handleBrandingChange}
-                        disabled={!isAdmin}
+                        disabled={isBrandingDisabled}
                         placeholder="#000000"
                         style={{ fontSize: '0.85rem' }}
                       />
@@ -462,8 +619,8 @@ export const Settings = () => {
                         name="accent_theme_color"
                         value={brandingForm.accent_theme_color}
                         onChange={handleBrandingChange}
-                        disabled={!isAdmin}
-                        style={{ width: '40px', height: '40px', padding: '2px', cursor: 'pointer', flexShrink: 0 }}
+                        disabled={isBrandingDisabled}
+                        style={{ width: '40px', height: '40px', padding: '2px', cursor: isBrandingDisabled ? 'not-allowed' : 'pointer', flexShrink: 0 }}
                       />
                       <input
                         id="settings-color-accent-hex"
@@ -471,7 +628,7 @@ export const Settings = () => {
                         name="accent_theme_color"
                         value={brandingForm.accent_theme_color}
                         onChange={handleBrandingChange}
-                        disabled={!isAdmin}
+                        disabled={isBrandingDisabled}
                         placeholder="#000000"
                         style={{ fontSize: '0.85rem' }}
                       />
@@ -486,6 +643,7 @@ export const Settings = () => {
                       type="submit"
                       variant="primary"
                       loading={brandingLoading}
+                      disabled={isBrandingDisabled}
                     >
                       Save Branding Configurations
                     </Button>
@@ -496,6 +654,35 @@ export const Settings = () => {
 
             {/* Curated Theme Presets */}
             <Card title="Pre-Curated Color Presets" subtitle="Instantly apply premium color psychology visual themes.">
+              {subTier === 'free' && (
+                <div style={{
+                  padding: '12px',
+                  backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                  border: '1px solid rgba(245, 158, 11, 0.25)',
+                  borderRadius: '8px',
+                  color: '#f59e0b',
+                  fontSize: '0.8rem',
+                  marginBottom: '16px',
+                  lineHeight: 1.4
+                }}>
+                   <strong>Premium Themes Locked:</strong> Curved palettes and curated theme templates require a Pro or Ultra subscription.
+                </div>
+              )}
+              {subTier === 'pro' && themeChangesCount >= 1 && (
+                <div style={{
+                  padding: '12px',
+                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.2)',
+                  borderRadius: '8px',
+                  color: '#f87171',
+                  fontSize: '0.8rem',
+                  marginBottom: '16px',
+                  lineHeight: 1.4
+                }}>
+                   <strong>Presets Locked:</strong> You have already used your 1 custom theme branding edit. Upgrade to Ultra for unlimited theme edits.
+                </div>
+              )}
+
               {themesLoading ? (
                 <div style={{ display: 'flex', gap: '10px' }}>
                   {[1, 2, 3].map(i => <div key={i} className="shimmer-bg" style={{ flex: 1, height: '80px', borderRadius: '10px' }} />)}
@@ -510,20 +697,21 @@ export const Settings = () => {
                     <div
                       key={t.id}
                       id={`theme-preset-${t.id}`}
-                      onClick={() => isAdmin && handleApplyPreset(t.id)}
+                      onClick={() => !isBrandingDisabled && handleApplyPreset(t.id)}
                       style={{
                         padding: '14px',
                         backgroundColor: 'rgba(255, 255, 255, 0.02)',
                         border: '1px solid rgba(255, 255, 255, 0.05)',
                         borderRadius: '12px',
-                        cursor: isAdmin ? 'pointer' : 'default',
+                        cursor: isBrandingDisabled ? 'not-allowed' : 'pointer',
+                        opacity: isBrandingDisabled ? 0.6 : 1,
                         transition: 'var(--transition-fast)',
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '10px'
                       }}
                       onMouseEnter={(e) => {
-                        if (isAdmin) {
+                        if (!isBrandingDisabled) {
                           e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
                           e.currentTarget.style.borderColor = 'rgba(var(--primary-color-rgb), 0.2)';
                         }
@@ -552,8 +740,92 @@ export const Settings = () => {
             </Card>
           </div>
 
-          {/* Right Side: Visual Design inspiration links */}
-          <div style={{ flex: 0.8, minWidth: '280px' }}>
+          {/* Right Side: My Subscription & Inspiration links */}
+          <div style={{ flex: 0.8, minWidth: '280px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <Card title="My Subscription" subtitle="Manage your retail store plan.">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Current Plan:</span>
+                  <span style={{
+                    display: 'inline-flex',
+                    padding: '4px 12px',
+                    borderRadius: '20px',
+                    fontSize: '0.75rem',
+                    fontWeight: '800',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    backgroundColor: isSystemTech ? '#10B981' : (subTier === 'ultra' ? '#8b5cf6' : subTier === 'pro' ? 'var(--primary-color)' : 'rgba(255, 255, 255, 0.08)'),
+                    color: '#fff',
+                  }}>
+                    {isSystemTech ? 'Technician Bypass' : (subTier === 'ultra' ? 'Ultra Plan' : subTier === 'pro' ? 'Pro Plan' : 'Free Trial')}
+                  </span>
+                </div>
+                
+                {!isSystemTech && subTier !== 'ultra' && isAdmin && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+                    {subTier === 'free' && (
+                      <Button
+                        id="upgrade-pro-btn"
+                        variant="primary"
+                        fullWidth
+                        onClick={() => handleOpenUpgradeModal('pro')}
+                      >
+                        Upgrade to Pro (10,000 FCFA/mo)
+                      </Button>
+                    )}
+                    <Button
+                      id="upgrade-ultra-btn"
+                      variant="secondary"
+                      fullWidth
+                      style={{
+                        backgroundColor: '#8b5cf6',
+                        borderColor: '#8b5cf6',
+                        color: '#fff'
+                      }}
+                      onClick={() => handleOpenUpgradeModal('ultra')}
+                    >
+                      Upgrade to Ultra (25,000 FCFA/mo)
+                    </Button>
+                  </div>
+                )}
+                
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '12px', lineHeight: 1.4 }}>
+                  <span style={{ fontWeight: '700', display: 'block', marginBottom: '6px', textTransform: 'uppercase', fontSize: '0.68rem', letterSpacing: '0.03em' }}>Tier Features:</span>
+                  {subTier === 'free' && (
+                    <ul style={{ margin: 0, paddingLeft: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <li>Max 1 staff member</li>
+                      <li>Max 15 catalog products</li>
+                      <li>Standard theme colors only</li>
+                      <li>Analytics dashboard locked</li>
+                    </ul>
+                  )}
+                  {subTier === 'pro' && (
+                    <ul style={{ margin: 0, paddingLeft: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <li>Max 2 staff members</li>
+                      <li>Unlimited catalog products</li>
+                      <li>Theme customization (1 edit allowed)</li>
+                      <li>Basic Sales Analytics charts</li>
+                    </ul>
+                  )}
+                  {subTier === 'ultra' && (
+                    <ul style={{ margin: 0, paddingLeft: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <li>Unlimited staff members & products</li>
+                      <li>Unlimited theme customization edits</li>
+                      <li>Deep Analytics (Predictive & Low-Stock)</li>
+                      <li>Customer Testimonials & Chatbot reviews</li>
+                      <li>Pinned Featured store recommendations</li>
+                    </ul>
+                  )}
+                  {isSystemTech && (
+                    <div style={{ marginTop: '12px', padding: '10px 14px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', color: '#10B981', fontWeight: '700', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '1.1rem' }}>✓</span>
+                      <span>System Technician Mode: All premium limits bypassed.</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Card>
+
             <Card title="Design Resources & Inspiration" subtitle="Discover premium external theme tools.">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {inspirations.map((item, idx) => (
@@ -575,10 +847,16 @@ export const Settings = () => {
                         style={{
                           fontSize: '0.75rem',
                           color: 'var(--primary-color)',
-                          fontWeight: '600'
+                          fontWeight: '600',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
                         }}
                       >
-                        Launch 🔗
+                        Launch
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{ width: '11px', height: '11px' }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                        </svg>
                       </a>
                     </h4>
                     <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.4, margin: 0 }}>
@@ -600,6 +878,35 @@ export const Settings = () => {
           {/* Add Staff form */}
           <div style={{ flex: 0.9, minWidth: '300px' }}>
             <Card title="Pre-Authorize Employee Profile" subtitle="Pre-authorize email addresses for secure login.">
+              {subTier === 'free' && staffCount >= 1 && (
+                <div style={{
+                  padding: '12px',
+                  backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                  border: '1px solid rgba(245, 158, 11, 0.25)',
+                  borderRadius: '8px',
+                  color: '#f59e0b',
+                  fontSize: '0.8rem',
+                  marginBottom: '16px',
+                  lineHeight: 1.4
+                }}>
+                   <strong>Staff Limit Reached:</strong> Free Trial accounts are limited to exactly 1 staff member. Please upgrade to Pro or Ultra in the branding tab to add more employees.
+                </div>
+              )}
+              {subTier === 'pro' && staffCount >= 2 && (
+                <div style={{
+                  padding: '12px',
+                  backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                  border: '1px solid rgba(245, 158, 11, 0.25)',
+                  borderRadius: '8px',
+                  color: '#f59e0b',
+                  fontSize: '0.8rem',
+                  marginBottom: '16px',
+                  lineHeight: 1.4
+                }}>
+                   <strong>Staff Limit Reached:</strong> Pro accounts are limited to exactly 2 staff members. Please upgrade to Ultra in the branding tab to add more employees.
+                </div>
+              )}
+
               <form onSubmit={handleAddStaff} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div>
                   <label htmlFor="staff-name">Name</label>
@@ -610,6 +917,7 @@ export const Settings = () => {
                     value={addStaffForm.name}
                     onChange={handleAddStaffChange}
                     placeholder="e.g. John Doe"
+                    disabled={isStaffDisabled}
                     required
                   />
                 </div>
@@ -623,6 +931,7 @@ export const Settings = () => {
                     value={addStaffForm.email}
                     onChange={handleAddStaffChange}
                     placeholder="john@store.com"
+                    disabled={isStaffDisabled}
                     required
                   />
                 </div>
@@ -634,6 +943,7 @@ export const Settings = () => {
                     name="role"
                     value={addStaffForm.role}
                     onChange={handleAddStaffChange}
+                    disabled={isStaffDisabled}
                   >
                     <option value="employee">Staff / Cashier</option>
                     <option value="admin">Store Owner / Admin</option>
@@ -646,6 +956,7 @@ export const Settings = () => {
                     type="submit"
                     variant="primary"
                     loading={addStaffLoading}
+                    disabled={isStaffDisabled}
                   >
                     Pre-Authorize Staff
                   </Button>
@@ -693,10 +1004,10 @@ export const Settings = () => {
                           fontWeight: '700',
                           textTransform: 'uppercase',
                           letterSpacing: '0.05em',
-                          backgroundColor: staff.role === 'admin' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(16, 185, 129, 0.12)',
-                          color: staff.role === 'admin' ? 'var(--accent-color)' : 'var(--color-success)',
+                          backgroundColor: (staff.role === 'proprietor' || staff.role === 'technician') ? 'rgba(245, 158, 11, 0.12)' : 'rgba(16, 185, 129, 0.12)',
+                          color: (staff.role === 'proprietor' || staff.role === 'technician') ? 'var(--accent-color)' : 'var(--color-success)',
                         }}>
-                          {staff.role === 'admin' ? 'Store Owner' : 'Staff'}
+                          {staff.role === 'technician' ? 'System Tech' : staff.role === 'proprietor' ? 'Store Owner' : 'Staff'}
                         </span>
                       </td>
 
@@ -737,9 +1048,139 @@ export const Settings = () => {
               </Table>
             </Card>
           </div>
-
         </div>
       )}
+
+      {/* ─── Subscription Billing Upgrade Modal ─── */}
+      <Modal
+        isOpen={showUpgradeModal}
+        onClose={() => upgradeStep !== 'processing' && setShowUpgradeModal(false)}
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '20px', height: '20px', color: 'var(--primary-color)' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H3m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25c.621 0 1.125.504 1.125 1.125v13.5c0 .621-.504 1.125-1.125 1.125H3.75A1.125 1.125 0 012.25 18M3.75 4.5h16.5M18 10.5h.008v.008H18V10.5zm-3 0h.008v.008H15V10.5z" />
+            </svg>
+            <span>Upgrade to {upgradeTier === 'ultra' ? 'Ultra' : 'Pro'} Plan</span>
+          </div>
+        }
+        footer={
+          upgradeStep === 'input' ? (
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', width: '100%' }}>
+              <Button onClick={() => setShowUpgradeModal(false)} variant="secondary">
+                Cancel
+              </Button>
+              <Button onClick={handleUpgradeSubscription} variant="primary">
+                Pay via Mobile Money
+              </Button>
+            </div>
+          ) : null
+        }
+      >
+        <style>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
+        {upgradeStep === 'input' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+              Enter your Cameroonian Mobile Money phone number. We will send a payment prompt to authorize this monthly plan.
+            </p>
+            
+            <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.02)', padding: '12px', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.04)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginBottom: '4px' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Target Tier:</span>
+                <span style={{ fontWeight: '700', textTransform: 'capitalize' }}>{upgradeTier} Plan</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Amount Due:</span>
+                <span style={{ fontWeight: '800', color: 'var(--accent-color)' }}>
+                  {upgradeTier === 'ultra' ? '25,000 FCFA' : '10,000 FCFA'}
+                </span>
+              </div>
+            </div>
+
+            <form onSubmit={handleUpgradeSubscription} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label htmlFor="momo-phone-upgrade" style={{ fontSize: '0.78rem', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                MoMo Phone Number *
+              </label>
+              <input
+                id="momo-phone-upgrade"
+                type="tel"
+                placeholder="e.g. 6XXXXXXXX"
+                value={upgradePhone}
+                onChange={(e) => setUpgradePhone(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '11px 14px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--input-border)',
+                  backgroundColor: 'var(--input-bg)',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.9rem',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+                autoFocus
+              />
+              {upgradeError && (
+                <p style={{ margin: '6px 0 0 0', color: '#f87171', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <WarningIcon size={14} style={{ color: '#f87171' }} />
+                  {upgradeError}
+                </p>
+              )}
+            </form>
+          </div>
+        )}
+
+        {upgradeStep === 'processing' && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', padding: '20px 0', textAlign: 'center' }}>
+            <div style={{
+              width: '44px',
+              height: '44px',
+              border: '3px solid rgba(255, 255, 255, 0.1)',
+              borderTopColor: 'var(--primary-color)',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite'
+            }} />
+            <div>
+              <h4 style={{ margin: '0 0 6px 0', fontSize: '1.05rem', fontWeight: '700' }}>Waiting for Payment Authorization</h4>
+              <p style={{ margin: '0 0 12px 0', fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                A simulated push notification prompt has been sent to <strong>{upgradePhone}</strong>.
+              </p>
+              <p style={{ margin: 0, fontSize: '0.74rem', color: 'var(--text-muted)', fontStyle: 'italic', lineHeight: 1.45 }}>
+                Please check your phone, enter your Mobile Money PIN code, and approve the transaction.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {upgradeStep === 'success' && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '20px 0', textAlign: 'center' }}>
+            <div style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(16, 185, 129, 0.15)',
+              border: '2px solid #10b981',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="#10b981" style={{ width: '28px', height: '28px' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+            </div>
+            <div>
+              <h4 style={{ margin: '0 0 4px 0', fontSize: '1.15rem', fontWeight: '800', color: '#10b981' }}>Subscription Activated!</h4>
+              <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                Your {upgradeTier === 'ultra' ? 'Ultra' : 'Pro'} features have been unlocked successfully.
+              </p>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

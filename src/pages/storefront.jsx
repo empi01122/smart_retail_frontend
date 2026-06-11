@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getAllProducts } from '../services/productService';
-import { recordSale } from '../services/salesService';
+import { recordSale, getPendingOnlineOrders, confirmOnlineOrder } from '../services/salesService';
 import Card from '../components/card';
 import Button from '../components/button';
 import Modal from '../components/modal';
+import { useSettings } from '../hooks/useSettings';
+import { CashIcon, MomoIcon, BoxIcon, ReceiptIcon, PrintIcon, LockIcon, WarningIcon, CartIcon, ProductsIcon } from '../components/icons';
 
 const titleCase = (text) => {
   if (!text || typeof text !== 'string') return '';
@@ -11,6 +13,7 @@ const titleCase = (text) => {
 };
 
 export const Storefront = () => {
+  const { settings } = useSettings();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -18,12 +21,169 @@ export const Storefront = () => {
   
   // Shopping Cart state
   const [cart, setCart] = useState([]);
+  const [paymentMethod, setPaymentMethod] = useState('cash');
   
   // Checkout States
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [receipt, setReceipt] = useState(null);
   const [checkoutError, setCheckoutError] = useState('');
+
+  // Simulated MoMo Modal State
+  const [showSimulatedMomoModal, setShowSimulatedMomoModal] = useState(false);
+  const [simulatedMomoStep, setSimulatedMomoStep] = useState('choose_provider'); // choose_provider | sending_push | success
+  const [momoProvider, setMomoProvider] = useState('mtn'); // mtn | orange
+  const [momoPhoneNumber, setMomoPhoneNumber] = useState('');
+
+  // Mobile/Tablet responsive view controls
+  const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 1024);
+  const [mobileTab, setMobileTab] = useState('catalog'); // 'catalog' or 'cart'
+
+  // Online order notification state
+  const [pendingOrders, setPendingOrders] = useState([]);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifLoading, setNotifLoading] = useState(false);
+
+  const handleConfirmOnlineOrder = async (orderId) => {
+    try {
+      await confirmOnlineOrder(orderId);
+      // Refresh list
+      const orders = await getPendingOnlineOrders();
+      setPendingOrders(orders);
+      alert("Order confirmed & dispatched! You can print the dispatch receipt now.");
+    } catch (error) {
+      console.error("Failed to confirm online order:", error);
+      alert(error.response?.data?.detail || "Failed to confirm order. Please try again.");
+    }
+  };
+
+  const handlePrintDispatchReceipt = (order) => {
+    const printWindow = window.open('', '_blank', 'width=450,height=750');
+    if (!printWindow) { alert('Please allow popups to print.'); return; }
+    
+    const itemsHtml = order.items?.map(item => `
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:0.88rem;">
+        <span>${titleCase(item.product_name) || ('Product #' + item.product_id)} (x${item.quantity})</span>
+        <span>${(item.unit_price * item.quantity).toFixed(2)} FCFA</span>
+      </div>
+    `).join('') || '';
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Dispatch Invoice #${order.id}</title>
+          <style>
+            @media print { body { margin:0; padding:10px; } }
+            body { font-family:'Courier New',Courier,monospace; padding:20px; color:#1e293b; background:#fff; width:320px; margin:0 auto; }
+            .center { text-align:center; }
+            .dashed { border-top:1px dashed #94a3b8; margin:12px 0; }
+            .section-label { font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; color:#64748b; margin-bottom:6px; }
+            .row { display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px; }
+            .total-row { display:flex; justify-content:space-between; font-weight:bold; font-size:1.05rem; margin-top:10px; }
+            .secure-info { border:2px dashed #b45309; padding:12px; margin:16px 0; text-align:center; background:#fffbeb; border-radius:4px; font-size:0.76rem; color:#78350f; font-weight:bold; }
+          </style>
+        </head>
+        <body>
+          <div class="center">
+            <h2 style="margin:0 0 2px 0;font-size:1.2rem;font-weight:800;">${settings?.store_name || 'SMART RETAIL'}</h2>
+            <p style="margin:0;font-size:0.7rem;color:#64748b;text-transform:uppercase;">Rider Dispatch Bill</p>
+          </div>
+          <div class="dashed"></div>
+          <div class="section-label">Order Details</div>
+          <div class="row"><span><b>Invoice No:</b></span><span>${order.receipt_number || ('#' + order.id)}</span></div>
+          <div class="row"><span><b>Date:</b></span><span>${new Date(order.created_at).toLocaleString()}</span></div>
+          <div class="row"><span><b>Payment:</b></span><span>Mobile Money</span></div>
+          <div class="dashed"></div>
+          <div class="section-label">Delivery Destination</div>
+          <div class="row"><span><b>Recipient:</b></span><span>${order.customer_name}</span></div>
+          <div class="row"><span><b>Phone:</b></span><span>${order.customer_phone}</span></div>
+          <div style="font-size:0.85rem;margin-top:4px;"><b>Address:</b> ${order.delivery_address}</div>
+          ${order.order_note ? `<div style="font-size:0.85rem;margin-top:4px;font-style:italic;"><b>Note:</b> "${order.order_note}"</div>` : ''}
+          <div class="dashed"></div>
+          <div class="section-label">Items Dispatched</div>
+          ${itemsHtml}
+          <div class="dashed"></div>
+          <div class="total-row">
+            <span>TOTAL AMOUNT</span>
+            <span>${order.total_amount.toLocaleString()} FCFA</span>
+          </div>
+          <div class="secure-info">
+            <div style="display:flex;align-items:center;gap:6px;font-weight:bold;margin-bottom:6px;color:#0f172a;">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;display:inline-block;vertical-align:middle;flex-shrink:0;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+              <span>CUSTOMER SECURE PIN CHECK</span>
+            </div>
+            PIN Code is hidden from cashier/rider. Collect the 4-digit verification code from customer delivery book to claim funds.
+          </div>
+          <div class="dashed"></div>
+          <div class="center" style="font-size:0.75rem;color:#64748b;margin-top:20px;">
+            Thank you for shopping with us!
+          </div>
+          <script>
+            window.onload = function() { window.print(); setTimeout(function() { window.close(); }, 600); }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+  const prevOrderIdsRef = useRef(new Set());
+  const timerRef = useRef(null);
+
+  const startSwiftChange = (productId, delta, maxStock) => {
+    if (timerRef.current) return;
+
+    const performStep = () => {
+      setCart(prevCart => {
+        const item = prevCart.find(i => i.product.id === productId);
+        if (!item) return prevCart;
+        const newQty = item.quantity + delta;
+        if (newQty <= 0) {
+          return prevCart.filter(i => i.product.id !== productId);
+        }
+        if (newQty > maxStock) {
+          return prevCart;
+        }
+        return prevCart.map(i =>
+          i.product.id === productId ? { ...i, quantity: newQty } : i
+        );
+      });
+    };
+
+    performStep();
+
+    timerRef.current = setTimeout(() => {
+      timerRef.current = setInterval(performStep, 80);
+    }, 350);
+  };
+
+  const stopSwiftChange = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const isMobile = window.innerWidth <= 1024;
+      setIsMobileView(isMobile);
+      if (!isMobile) {
+        setMobileTab('catalog'); // default resetting when scaling up
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const fetchProducts = async () => {
     try {
@@ -39,6 +199,26 @@ export const Storefront = () => {
 
   useEffect(() => {
     fetchProducts();
+  }, []);
+
+  // Poll for new online orders every 25 seconds
+  useEffect(() => {
+    const fetchPending = async () => {
+      try {
+        const orders = await getPendingOnlineOrders();
+        const newIds = new Set(orders.map(o => o.id));
+        // If any IDs are new, open the panel automatically
+        const hasNew = orders.some(o => !prevOrderIdsRef.current.has(o.id));
+        if (hasNew && orders.length > 0) setNotifOpen(true);
+        prevOrderIdsRef.current = newIds;
+        setPendingOrders(orders);
+      } catch (_) {
+        // Silently fail — cashier may not have internet briefly
+      }
+    };
+    fetchPending(); // immediate first call
+    const interval = setInterval(fetchPending, 25000);
+    return () => clearInterval(interval);
   }, []);
 
   // Filter products by search query and category
@@ -95,32 +275,33 @@ export const Storefront = () => {
     setCart(prevCart => prevCart.filter(item => item.product.id !== productId));
   };
 
-  const clearCart = () => setCart([]);
+  const clearCart = () => {
+    setCart([]);
+    setPaymentMethod('cash');
+  };
 
   const cartTotal = cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
 
-  const handleCheckout = async () => {
-    if (cart.length === 0) return;
-    setCheckoutLoading(true);
-    setCheckoutError('');
-    
-    // Prepare backend payload: { items: [ { product_id: X, quantity: Y } ] }
-    const payload = {
-      items: cart.map(item => ({
-        product_id: item.product.id,
-        quantity: item.quantity
-      }))
-    };
-
+  const saveMomoSale = async () => {
     try {
+      setCheckoutLoading(true);
+      setCheckoutError('');
+      const payload = {
+        items: cart.map(item => ({
+          product_id: item.product.id,
+          quantity: item.quantity
+        })),
+        payment_method: 'mobile_money',
+        created_at: new Date().toISOString()
+      };
+
       const saleResult = await recordSale(payload);
       setReceipt(saleResult);
       setIsCheckoutModalOpen(true);
       clearCart();
-      // Reload products to get updated stock counts
       await fetchProducts();
     } catch (error) {
-      console.error('Checkout failed:', error);
+      console.error('Mobile money checkout failed:', error);
       setCheckoutError(
         error.response?.data?.detail || 
         'An unexpected error occurred during checkout. Please verify stock counts.'
@@ -130,11 +311,430 @@ export const Storefront = () => {
     }
   };
 
+  const handleCheckout = async () => {
+    console.log("handleCheckout clicked! paymentMethod:", paymentMethod, "cart:", cart);
+    if (cart.length === 0) return;
+    setCheckoutLoading(true);
+    setCheckoutError('');
+    
+    if (paymentMethod === 'mobile_money') {
+      setMomoPhoneNumber(''); // let the user input it
+      setMomoProvider('mtn');
+      setSimulatedMomoStep('choose_provider');
+      setShowSimulatedMomoModal(true);
+      setCheckoutLoading(false);
+    } else {
+      // Cash payment - directly write to DB
+      const payload = {
+        items: cart.map(item => ({
+          product_id: item.product.id,
+          quantity: item.quantity
+        })),
+        payment_method: paymentMethod,
+        created_at: new Date().toISOString()
+      };
+
+      try {
+        const saleResult = await recordSale(payload);
+        setReceipt(saleResult);
+        setIsCheckoutModalOpen(true);
+        clearCart();
+        await fetchProducts();
+      } catch (error) {
+        console.error('Checkout failed:', error);
+        setCheckoutError(
+          error.response?.data?.detail || 
+          'An unexpected error occurred during checkout. Please verify stock counts.'
+        );
+      } finally {
+        setCheckoutLoading(false);
+      }
+    }
+  };
+
+  const renderSimulatedMomoModal = () => {
+    if (!showSimulatedMomoModal) return null;
+
+    const handleConfirmSimulatedPayment = () => {
+      const phoneVal = momoPhoneNumber.trim();
+      if (!phoneVal) {
+        alert("Please enter the customer's Mobile Money phone number.");
+        return;
+      }
+
+      // Stripping country codes
+      let localPhone = phoneVal;
+      if (phoneVal.startsWith('+237')) {
+        localPhone = phoneVal.slice(4);
+      } else if (phoneVal.startsWith('237')) {
+        localPhone = phoneVal.slice(3);
+      }
+      localPhone = localPhone.replace(/[\s\-]/g, '');
+
+      if (!/^\d+$/.test(localPhone)) {
+        alert("Phone number must contain only digits.");
+        return;
+      }
+      if (localPhone.length !== 9) {
+        alert("Cameroonian phone numbers must be exactly 9 digits long (excluding +237).");
+        return;
+      }
+      if (!/^6[5-9]\d{7}$/.test(localPhone)) {
+        alert("Invalid Cameroon phone number. Must start with 6 followed by 5, 7, 8, or 9 (e.g. 6XXXXXXXX).");
+        return;
+      }
+
+      // Update provider based on prefix
+      if (localPhone.startsWith('69') || localPhone.startsWith('655') || localPhone.startsWith('656') || localPhone.startsWith('657') || localPhone.startsWith('658') || localPhone.startsWith('659')) {
+        setMomoProvider('orange');
+      } else {
+        setMomoProvider('mtn');
+      }
+
+      setMomoPhoneNumber(localPhone);
+      setSimulatedMomoStep('sending_push');
+      setTimeout(() => {
+        setSimulatedMomoStep('success');
+        setTimeout(async () => {
+          setShowSimulatedMomoModal(false);
+          await saveMomoSale();
+        }, 1200);
+      }, 2500);
+    };
+
+    return (
+      <div style={{
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.75)',
+        backdropFilter: 'blur(8px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 9999,
+        fontFamily: 'Inter, system-ui, sans-serif'
+      }}>
+        <style>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
+        <div style={{
+          backgroundColor: '#111827',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: '20px',
+          width: '100%',
+          maxWidth: '380px',
+          padding: '24px',
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+          position: 'relative',
+          color: '#ffffff'
+        }}>
+          {simulatedMomoStep !== 'sending_push' && simulatedMomoStep !== 'success' && (
+            <button
+              onClick={() => setShowSimulatedMomoModal(false)}
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                background: 'none',
+                border: 'none',
+                color: 'rgba(255, 255, 255, 0.4)',
+                cursor: 'pointer',
+                fontSize: '1.4rem'
+              }}
+            >
+              ×
+            </button>
+          )}
+
+          {simulatedMomoStep === 'choose_provider' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              <div style={{ textAlign: 'center' }}>
+                <h3 style={{ margin: '0 0 6px 0', fontSize: '1.2rem', fontWeight: '800' }}>Smart Retail MoMo Pay</h3>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)' }}>Select customer's mobile payment provider</p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  onClick={() => setMomoProvider('mtn')}
+                  style={{
+                    flex: 1,
+                    padding: '16px 12px',
+                    borderRadius: '12px',
+                    border: `2px solid ${momoProvider === 'mtn' ? '#F59E0B' : 'rgba(255,255,255,0.05)'}`,
+                    backgroundColor: momoProvider === 'mtn' ? 'rgba(245, 158, 11, 0.08)' : 'rgba(255,255,255,0.02)',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#FBEB3C', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', color: '#000', fontSize: '0.82rem' }}>MTN</div>
+                  <span style={{ fontSize: '0.85rem', fontWeight: '700' }}>MTN MoMo</span>
+                </button>
+
+                <button
+                  onClick={() => setMomoProvider('orange')}
+                  style={{
+                    flex: 1,
+                    padding: '16px 12px',
+                    borderRadius: '12px',
+                    border: `2px solid ${momoProvider === 'orange' ? '#F97316' : 'rgba(255,255,255,0.05)'}`,
+                    backgroundColor: momoProvider === 'orange' ? 'rgba(249, 115, 22, 0.08)' : 'rgba(255,255,255,0.02)',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#FF6600', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', color: '#fff', fontSize: '0.82rem' }}>Orange</div>
+                  <span style={{ fontSize: '0.85rem', fontWeight: '700' }}>Orange Money</span>
+                </button>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '600', color: 'rgba(255, 255, 255, 0.55)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Customer MoMo Phone Number *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 6XXXXXXXX"
+                  value={momoPhoneNumber}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setMomoPhoneNumber(val);
+                    if (val.startsWith('69') || val.startsWith('23769') || val.startsWith('+23769') || val.startsWith('655')) {
+                      setMomoProvider('orange');
+                    } else if (val.startsWith('67') || val.startsWith('68') || val.startsWith('23767') || val.startsWith('23768')) {
+                      setMomoProvider('mtn');
+                    }
+                  }}
+                  style={{ width: '100%', padding: '11px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.12)', backgroundColor: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                  <span style={{ color: 'rgba(255, 255, 255, 0.6)' }}>Total Amount:</span>
+                  <span style={{ fontWeight: '800', color: '#F59E0B' }}>{cartTotal.toLocaleString()} FCFA</span>
+                </div>
+              </div>
+
+              <button
+                onClick={handleConfirmSimulatedPayment}
+                style={{
+                  padding: '14px',
+                  borderRadius: '12px',
+                  border: 'none',
+                  backgroundColor: momoProvider === 'mtn' ? '#F59E0B' : '#F97316',
+                  color: '#ffffff',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  fontSize: '0.95rem'
+                }}
+              >
+                Simulate Push Request
+              </button>
+            </div>
+          )}
+
+          {simulatedMomoStep === 'sending_push' && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', padding: '20px 0', textAlign: 'center' }}>
+              <div style={{
+                width: '44px',
+                height: '44px',
+                border: '3px solid rgba(255,255,255,0.1)',
+                borderTopColor: momoProvider === 'mtn' ? '#F59E0B' : '#F97316',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite'
+              }} />
+              <div>
+                <h4 style={{ margin: '0 0 6px 0', fontSize: '1.05rem', fontWeight: '700' }}>Waiting for Approval</h4>
+                <p style={{ margin: '0 0 12px 0', fontSize: '0.82rem', color: '#cbd5e1', lineHeight: 1.45 }}>
+                  Sending Mobile Money payment prompt to account <strong>{momoPhoneNumber}</strong>.
+                </p>
+                <p style={{ margin: 0, fontSize: '0.74rem', color: '#94a3b8', fontStyle: 'italic', lineHeight: 1.4 }}>
+                  Please ask the customer to dial {momoProvider === 'mtn' ? '*126#' : '#150#'} on their phone and enter their PIN to approve.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {simulatedMomoStep === 'success' && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '20px 0', textAlign: 'center' }}>
+              <div style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '50%',
+                backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                border: '2px solid #10b981',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="#10b981" style={{ width: '28px', height: '28px' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+              </div>
+              <div>
+                <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', fontWeight: '800', color: '#10b981' }}>Approved!</h4>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: '#94a3b8' }}>Recording transaction...</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const handlePrintReceipt = () => {
+    if (!receipt) return;
+    const printWindow = window.open('', '_blank', 'width=450,height=650');
+    if (!printWindow) {
+      alert("Please allow popups to print/download the receipt.");
+      return;
+    }
+    const itemsHtml = receipt.items?.map(item => `
+      <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.9rem;">
+        <span>${titleCase(item.product_name) || ('Product #' + item.product_id)} (${item.quantity})</span>
+        <span>${(item.unit_price * item.quantity).toFixed(2)} FCFA</span>
+      </div>
+    `).join('') || '';
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Receipt ${receipt.receipt_number || ('#' + receipt.id)}</title>
+          <style>
+            @media print {
+              body { margin: 0; padding: 10px; }
+            }
+            body {
+              font-family: 'Courier New', Courier, monospace;
+              padding: 20px;
+              color: #1e293b;
+              background-color: #ffffff;
+              width: 320px;
+              margin: 0 auto;
+            }
+            .center { text-align: center; }
+            .bold { font-weight: bold; }
+            .dashed-line { border-top: 1px dashed #94a3b8; margin: 12px 0; }
+            .total-row { display: flex; justify-content: space-between; font-weight: bold; font-size: 1.05rem; margin-top: 10px; }
+            .pin-box {
+              border: 1px dashed #d97706;
+              padding: 12px;
+              margin: 16px 0;
+              text-align: center;
+              background-color: #fef3c7;
+              border-radius: 4px;
+            }
+            .pin-val {
+              font-size: 1.5rem;
+              font-weight: 800;
+              letter-spacing: 0.12em;
+              margin-top: 6px;
+              color: #b45309;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="center">
+            <h2 style="margin: 0 0 4px 0; font-size: 1.2rem; font-weight: 800;">${settings?.store_name ? settings.store_name.toUpperCase() : 'SMART RETAIL'}</h2>
+            <p style="margin: 0; font-size: 0.75rem; text-transform: uppercase; color: #64748b;">Transaction Receipt</p>
+          </div>
+          
+          <div class="dashed-line"></div>
+          
+          <p style="margin: 0 0 6px 0; font-size: 0.85rem;"><strong>RECEIPT ID:</strong> ${receipt.receipt_number || ('#' + receipt.id)}</p>
+          <p style="margin: 0 0 6px 0; font-size: 0.85rem;"><strong>DATE:</strong> ${new Date(receipt.created_at).toLocaleString()}</p>
+          <p style="margin: 0 0 12px 0; font-size: 0.85rem;"><strong>PAYMENT:</strong> ${receipt.payment_method === 'mobile_money' ? 'Mobile Money' : 'Cash'}</p>
+          
+          <div class="dashed-line"></div>
+          
+          <div style="margin: 12px 0;">
+            ${itemsHtml}
+          </div>
+          
+          <div class="dashed-line"></div>
+          
+          <div class="total-row">
+            <span>TOTAL AMOUNT</span>
+            <span>${receipt.total_amount.toFixed(2)} FCFA</span>
+          </div>
+          
+          ${receipt.payment_status === "paid_escrow" ? `
+            <div class="pin-box">
+              <span class="bold" style="font-size: 0.82rem; color: #b45309; display: block; text-transform: uppercase;">Secure Payment Enabled</span>
+              <p style="margin: 4px 0 8px 0; font-size: 0.74rem; color: #78350f; line-height: 1.3;">Share this PIN with delivery staff only after receiving items:</p>
+              <div class="pin-val">${receipt.delivery_pin}</div>
+            </div>
+          ` : ''}
+          
+          <div class="dashed-line"></div>
+          
+          <p class="center" style="margin-top: 30px; font-size: 0.8rem; color: #64748b;">Thank you for shopping with us!</p>
+          
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(function() { window.close(); }, 500);
+            }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   return (
-    <div className="pos-layout-container animate-fade-in">
+    <>
+      <div className="pos-layout-container animate-fade-in" style={{ flexDirection: isMobileView ? 'column' : 'row' }}>
       
+      {isMobileView && (
+        <div className="pos-mobile-tabs" style={{ position: 'relative' }}>
+          <button
+            className={`pos-mobile-tab ${mobileTab === 'catalog' ? 'active' : ''}`}
+            onClick={() => setMobileTab('catalog')}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+          >
+            <ProductsIcon size={16} /> Products ({products.length})
+          </button>
+          <button
+            className={`pos-mobile-tab ${mobileTab === 'cart' ? 'active' : ''}`}
+            onClick={() => setMobileTab('cart')}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+          >
+            <CartIcon size={16} /> Cart Ledger {cart.length > 0 && <span className="cart-badge">{cart.reduce((sum, item) => sum + item.quantity, 0)}</span>}
+          </button>
+          {/* Notification Bell — mobile */}
+          <button
+            onClick={() => setNotifOpen(o => !o)}
+            style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 14px', color: pendingOrders.length > 0 ? '#f59e0b' : 'rgba(255,255,255,0.45)', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: '600' }}
+            title="Online Orders"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '18px', height: '18px' }}><path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>
+            {pendingOrders.length > 0 && (
+              <span style={{ position: 'absolute', top: '4px', right: '8px', width: '18px', height: '18px', borderRadius: '50%', backgroundColor: '#ef4444', color: '#fff', fontSize: '0.65rem', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{pendingOrders.length}</span>
+            )}
+          </button>
+        </div>
+      )}
+
+
       {/* LEFT COLUMN: Catalog / Product Selection (Flexible Grid) */}
-      <div style={{ flex: 1.8, display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{
+        flex: 1.8,
+        display: (!isMobileView || mobileTab === 'catalog') ? 'flex' : 'none',
+        flexDirection: 'column',
+        gap: '20px'
+      }}>
         
         {/* Header and filters */}
         <div style={{
@@ -146,8 +746,36 @@ export const Storefront = () => {
           background: 'rgba(255, 255, 255, 0.02)',
           border: '1px solid rgba(255, 255, 255, 0.05)'
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h1 style={{ fontSize: '1.75rem', margin: 0 }}>Register Terminal</h1>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <h1 style={{ fontSize: '1.75rem', margin: 0 }}>Register Terminal</h1>
+              {!isMobileView && (
+                <button
+                  onClick={() => setNotifOpen(o => !o)}
+                  style={{
+                    background: pendingOrders.length > 0 ? 'rgba(245,158,11,0.15)' : 'var(--glass-card-bg)',
+                    border: `1px solid ${pendingOrders.length > 0 ? 'rgba(245,158,11,0.4)' : 'var(--glass-card-border)'}`,
+                    borderRadius: '10px',
+                    padding: '6px 14px',
+                    cursor: 'pointer',
+                    color: pendingOrders.length > 0 ? '#f59e0b' : 'var(--text-secondary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '0.8rem',
+                    fontWeight: '600',
+                    transition: 'var(--transition-fast)'
+                  }}
+                  title="Online Orders"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '16px', height: '16px' }}><path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>
+                  Online Orders
+                  {pendingOrders.length > 0 && (
+                    <span style={{ backgroundColor: '#ef4444', color: '#fff', borderRadius: '20px', padding: '1px 6px', fontSize: '0.68rem', fontWeight: '800' }}>{pendingOrders.length}</span>
+                  )}
+                </button>
+              )}
+            </div>
             <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
               Total items active: <strong>{products.length}</strong>
             </span>
@@ -326,7 +954,12 @@ export const Storefront = () => {
       </div>
 
       {/* RIGHT COLUMN: Interactive Shopping Cart (POS Side Drawer) */}
-      <div style={{ flex: 1.1, display: 'flex', flexDirection: 'column' }}>
+      <div style={{
+        flex: 1.1,
+        display: (!isMobileView || mobileTab === 'cart') ? 'flex' : 'none',
+        flexDirection: 'column',
+        minHeight: 0
+      }}>
         <Card
           title="Shopping Cart"
           subtitle="Customer selection ledger"
@@ -360,16 +993,17 @@ export const Storefront = () => {
               marginBottom: '16px',
               lineHeight: 1.4
             }}>
-              ⚠️ {checkoutError}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <WarningIcon size={14} />
+                <span>{checkoutError}</span>
+              </div>
             </div>
           )}
-
           {/* Cart item list */}
-          <div style={{ flex: 1, overflowY: 'auto', marginBottom: '20px', paddingRight: '4px' }}>
+          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, marginBottom: '20px', paddingRight: '4px' }}>
             {cart.length === 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '220px', color: 'var(--text-muted)' }}>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '48px', height: '48px', marginBottom: '10px', color: 'var(--text-muted)' }}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" /></svg>
-                <p style={{ fontSize: '0.85rem' }}>Basket is empty. Select products to begin.</p>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: '100px', color: 'var(--text-muted)' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '48px', height: '48px', marginBottom: '10px', color: 'var(--text-muted)' }}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" /></svg>                <p style={{ fontSize: '0.85rem' }}>Basket is empty. Select products to begin.</p>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -403,7 +1037,12 @@ export const Storefront = () => {
                     {/* Quantity controls */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <button
-                        onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.product.stock)}
+                        onMouseDown={() => startSwiftChange(item.product.id, -1, item.product.stock)}
+                        onMouseUp={stopSwiftChange}
+                        onMouseLeave={stopSwiftChange}
+                        onTouchStart={(e) => { e.preventDefault(); startSwiftChange(item.product.id, -1, item.product.stock); }}
+                        onTouchEnd={stopSwiftChange}
+                        onClick={(e) => e.preventDefault()}
                         style={{
                           width: '24px',
                           height: '24px',
@@ -416,7 +1055,8 @@ export const Storefront = () => {
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontSize: '0.9rem',
-                          fontWeight: 'bold'
+                          fontWeight: 'bold',
+                          userSelect: 'none'
                         }}
                       >
                         -
@@ -439,7 +1079,12 @@ export const Storefront = () => {
                       />
 
                       <button
-                        onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.product.stock)}
+                        onMouseDown={() => startSwiftChange(item.product.id, 1, item.product.stock)}
+                        onMouseUp={stopSwiftChange}
+                        onMouseLeave={stopSwiftChange}
+                        onTouchStart={(e) => { e.preventDefault(); startSwiftChange(item.product.id, 1, item.product.stock); }}
+                        onTouchEnd={stopSwiftChange}
+                        onClick={(e) => e.preventDefault()}
                         style={{
                           width: '24px',
                           height: '24px',
@@ -452,7 +1097,8 @@ export const Storefront = () => {
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontSize: '0.9rem',
-                          fontWeight: 'bold'
+                          fontWeight: 'bold',
+                          userSelect: 'none'
                         }}
                       >
                         +
@@ -487,6 +1133,32 @@ export const Storefront = () => {
               <span>0.00 FCFA</span>
             </div>
             
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', margin: '4px 0 12px 0' }}>
+              <label htmlFor="payment-method-select" style={{ fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-secondary)', letterSpacing: '0.03em' }}>
+                Payment Method:
+              </label>
+              <select
+                id="payment-method-select"
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+                style={{
+                  padding: '10px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--input-border)',
+                  backgroundColor: 'var(--input-bg)',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.85rem',
+                  fontWeight: '600',
+                  outline: 'none',
+                  cursor: 'pointer',
+                  width: '100%'
+                }}
+              >
+                <option value="cash">Cash Payment</option>
+                <option value="mobile_money">Mobile Money (Secure Payment)</option>
+              </select>
+            </div>
+
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
@@ -519,64 +1191,284 @@ export const Storefront = () => {
       <Modal
         isOpen={isCheckoutModalOpen}
         onClose={() => setIsCheckoutModalOpen(false)}
-        title="🧾 Transaction Successful"
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <ReceiptIcon size={20} style={{ color: 'var(--primary-color)' }} />
+            <span>Transaction Successful</span>
+          </div>
+        }
         footer={
-          <Button onClick={() => setIsCheckoutModalOpen(false)} variant="primary">
-            Done
-          </Button>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', width: '100%' }}>
+            <Button onClick={handlePrintReceipt} variant="secondary" icon={<PrintIcon size={16} />}>
+              Print Receipt
+            </Button>
+            <Button onClick={() => setIsCheckoutModalOpen(false)} variant="primary">
+              Done
+            </Button>
+          </div>
         }
       >
         {receipt && (
           <div style={{
-            fontFamily: 'monospace',
-            backgroundColor: 'var(--bg-sidebar)',
-            color: 'var(--text-primary)',
+            fontFamily: "'Courier New', Courier, monospace",
+            backgroundColor: '#ffffff',
+            color: '#1e293b',
             padding: '24px',
-            borderRadius: '12px',
-            border: '1px solid var(--border-sidebar)',
+            borderRadius: '2px',
+            border: '1px solid #cbd5e1',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
             fontSize: '0.85rem',
-            lineHeight: 1.5
+            lineHeight: 1.5,
+            maxWidth: '340px',
+            margin: '0 auto'
           }}>
             <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '24px', height: '24px', marginRight: '8px' }}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
-                <h2 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', fontFamily: 'inherit', margin: 0 }}>
-                  SMART RETAIL TERMINAL
-                </h2>
-              </div>
-              <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+              <h2 style={{ fontSize: '1.2rem', color: '#0f172a', fontFamily: 'inherit', margin: '0 0 4px 0', fontWeight: '800' }}>
+                {settings?.store_name ? settings.store_name.toUpperCase() : 'SMART RETAIL'}
+              </h2>
+              <p style={{ margin: 0, color: '#64748b', fontSize: '0.75rem', textTransform: 'uppercase' }}>
                 Transaction Receipt
               </p>
             </div>
 
-            <p style={{ margin: '0 0 4px 0' }}><strong>RECEIPT ID:</strong> #{receipt.id}</p>
-            <p style={{ margin: '0 0 16px 0' }}><strong>DATE:</strong> {new Date(receipt.created_at).toLocaleString()}</p>
+            <div style={{ borderBottom: '1px dashed #94a3b8', marginBottom: '12px' }} />
+
+            <p style={{ margin: '0 0 4px 0' }}><strong>RECEIPT ID:</strong> {receipt.receipt_number || `#${receipt.id}`}</p>
+            <p style={{ margin: '0 0 4px 0' }}><strong>DATE:</strong> {new Date(receipt.created_at).toLocaleString()}</p>
+            <p style={{ margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <strong>PAYMENT:</strong>
+              {receipt.payment_method === 'mobile_money' ? (
+                <>
+                  <MomoIcon size={14} style={{ color: '#0f172a' }} />
+                  <span style={{ marginLeft: '4px' }}>Mobile Money</span>
+                </>
+              ) : (
+                <>
+                  <CashIcon size={14} style={{ color: '#0f172a' }} />
+                  <span style={{ marginLeft: '4px' }}>Cash</span>
+                </>
+              )}
+            </p>
             
-            <div style={{ borderBottom: '1px dashed var(--border-sidebar)', marginBottom: '12px' }} />
+            <div style={{ borderBottom: '1px dashed #94a3b8', marginBottom: '12px' }} />
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
               {receipt.items?.map((item) => (
                 <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span>{item.product_name || `Product #${item.product_id}`} (x{item.quantity})</span>
+                  <span>{titleCase(item.product_name) || `Product #${item.product_id}`} ({item.quantity})</span>
                   <span>{(item.unit_price * item.quantity).toFixed(2)} FCFA</span>
                 </div>
               ))}
             </div>
 
-            <div style={{ borderBottom: '1px dashed var(--border-sidebar)', marginBottom: '12px' }} />
+            <div style={{ borderBottom: '1px dashed #94a3b8', marginBottom: '12px' }} />
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.05rem', color: 'var(--text-primary)', fontWeight: 'bold' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', color: '#0f172a', fontWeight: 'bold' }}>
               <span>TOTAL AMOUNT</span>
               <span>{receipt.total_amount.toFixed(2)} FCFA</span>
             </div>
 
-            <div style={{ textAlign: 'center', marginTop: '30px', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+            {/* Escrow System Protection Badge — PIN is on printed receipt ONLY, not shown on screen */}
+            {receipt.payment_status === "paid_escrow" && (
+              <div style={{
+                marginTop: '16px',
+                padding: '12px',
+                backgroundColor: '#fef3c7',
+                border: '1px dashed #d97706',
+                borderRadius: '4px',
+                color: '#b45309',
+                textAlign: 'center'
+              }}>
+                <h4 style={{ margin: '0 0 6px 0', fontSize: '0.82rem', fontWeight: '800', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                  <LockIcon size={14} style={{ color: '#b45309' }} /> Secure Payment Active
+                </h4>
+                <p style={{ margin: 0, fontSize: '0.78rem', lineHeight: 1.45, color: '#78350f' }}>
+                  Payment is held securely. <strong>Print and hand the receipt to the customer.</strong>
+                  <br />The delivery verification PIN is printed on the receipt only.
+                </p>
+              </div>
+            )}
+
+            <div style={{ borderBottom: '1px dashed #94a3b8', marginTop: '16px', marginBottom: '16px' }} />
+
+            <div style={{ textAlign: 'center', color: '#64748b', fontSize: '0.75rem' }}>
               Thank you for shopping with us!
             </div>
           </div>
         )}
       </Modal>
-    </div>
+
+
+
+      {/* ─── Notification Panel Overlay ─── */}
+      {notifOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000 }}>
+          <div onClick={() => setNotifOpen(false)} style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)' }} />
+          <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: '100%', maxWidth: '420px', backgroundColor: 'var(--bg-sidebar, #1e293b)', display: 'flex', flexDirection: 'column', boxShadow: '-8px 0 40px rgba(0,0,0,0.4)', overflow: 'hidden' }}>
+
+            {/* Panel header */}
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-sidebar, rgba(255,255,255,0.07))', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: pendingOrders.length > 0 ? 'rgba(245,158,11,0.08)' : 'transparent' }}>
+              <div>
+                <h2 style={{ margin: '0 0 2px 0', fontSize: '1rem', fontWeight: '700', color: 'var(--text-primary)' }}>Online Orders</h2>
+                <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted, rgba(255,255,255,0.45))' }}>
+                  {pendingOrders.length === 0 ? 'No pending orders right now.' : `${pendingOrders.length} order(s) awaiting dispatch`}
+                </p>
+              </div>
+              <button onClick={() => setNotifOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted, rgba(255,255,255,0.4))', cursor: 'pointer', fontSize: '1.4rem', lineHeight: 1 }}>×</button>
+            </div>
+
+            {/* Orders list */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {pendingOrders.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted, rgba(255,255,255,0.25))', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '40px', height: '40px' }}><path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>
+                  <p style={{ margin: 0, fontSize: '0.85rem' }}>All clear — no pending online orders.</p>
+                </div>
+              ) : pendingOrders.map(order => (
+                <div key={order.id} style={{ backgroundColor: 'var(--glass-card-bg, rgba(255,255,255,0.03))', border: '1px solid rgba(245,158,11,0.25)', borderRadius: '12px', overflow: 'hidden' }}>
+                  {/* Order stripe */}
+                  <div style={{ padding: '12px 16px', backgroundColor: 'rgba(245,158,11,0.08)', borderBottom: '1px solid rgba(245,158,11,0.15)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <span style={{ fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#f59e0b' }}>Online Order #{order.id}</span>
+                      <p style={{ margin: '2px 0 0 0', fontSize: '0.76rem', color: 'var(--text-muted, rgba(255,255,255,0.5))' }}>{new Date(order.created_at).toLocaleString()}</p>
+                    </div>
+                    <span style={{ fontSize: '0.95rem', fontWeight: '800', color: '#f59e0b' }}>{order.total_amount.toLocaleString()} FCFA</span>
+                  </div>
+
+                  {/* Customer info */}
+                  <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.82rem' }}>
+                    {[
+                      { label: 'Customer', value: order.customer_name },
+                      { label: 'Phone', value: order.customer_phone },
+                      { label: 'Address', value: order.delivery_address },
+                    ].map(row => row.value && (
+                      <div key={row.label} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                        <span style={{ color: 'var(--text-secondary, rgba(255,255,255,0.7))', minWidth: '58px', fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', paddingTop: '2px' }}>{row.label}</span>
+                        <span style={{ color: 'var(--text-primary, #ffffff)', lineHeight: 1.4, fontWeight: '500' }}>{row.value}</span>
+                      </div>
+                    ))}
+                    {order.order_note && (
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                        <span style={{ color: 'var(--text-secondary, rgba(255,255,255,0.7))', minWidth: '58px', fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', paddingTop: '2px' }}>Note</span>
+                        <span style={{ color: '#f59e0b', fontStyle: 'italic', lineHeight: 1.4, fontWeight: '500' }}>"{order.order_note}"</span>
+                      </div>
+                    )}
+
+                    {/* Items */}
+                    <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--border-sidebar, rgba(255,255,255,0.1))' }}>
+                      <span style={{ fontSize: '0.68rem', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-secondary, rgba(255,255,255,0.6))', letterSpacing: '0.05em' }}>Items Ordered</span>
+                      <div style={{ marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        {order.items?.map(item => (
+                          <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
+                            <span style={{ color: 'var(--text-primary, #ffffff)', textTransform: 'capitalize', fontWeight: '500', flex: 1 }}>{item.product_name || `Product #${item.product_id}`} × {item.quantity}</span>
+                            <span style={{ color: 'var(--text-secondary, rgba(255,255,255,0.75))', fontWeight: '600' }}>{(item.unit_price * item.quantity).toFixed(2)} FCFA</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Actions Bar */}
+                    <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px dashed var(--border-sidebar, rgba(255,255,255,0.1))', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {order.is_confirmed ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', color: '#10b981', fontSize: '0.8rem', fontWeight: '800', backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: '6px', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                            <span>✓ Dispatched / Awaiting Delivery PIN</span>
+                          </div>
+                          <button
+                            onClick={() => handlePrintDispatchReceipt(order)}
+                            style={{
+                              width: '100%',
+                              padding: '10px',
+                              borderRadius: '8px',
+                              border: 'none',
+                              backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                              color: 'var(--text-primary, #fff)',
+                              fontWeight: '700',
+                              cursor: 'pointer',
+                              fontSize: '0.8rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '6px',
+                              transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)'}
+                            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)'}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '14px', height: '14px' }}><path strokeLinecap="round" strokeLinejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.056 48.056 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5zm-3 0h.008v.008H15V10.5z" /></svg>
+                            Print Dispatch Receipt
+                          </button>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <button
+                            onClick={() => handlePrintDispatchReceipt(order)}
+                            style={{
+                              width: '100%',
+                              padding: '10px',
+                              borderRadius: '8px',
+                              border: '1px solid var(--border-sidebar, rgba(255,255,255,0.15))',
+                              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                              color: 'var(--text-primary, #fff)',
+                              fontWeight: '700',
+                              cursor: 'pointer',
+                              fontSize: '0.8rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '6px',
+                              transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.15)'}
+                            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)'}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '14px', height: '14px' }}><path strokeLinecap="round" strokeLinejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.056 48.056 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5zm-3 0h.008v.008H15V10.5z" /></svg>
+                            Print / Save Dispatch Receipt
+                          </button>
+                          <button
+                            onClick={async () => {
+                              handlePrintDispatchReceipt(order);
+                              await handleConfirmOnlineOrder(order.id);
+                            }}
+                            style={{
+                              width: '100%',
+                              padding: '12px',
+                              borderRadius: '8px',
+                              border: 'none',
+                              backgroundColor: '#f59e0b',
+                              color: '#000',
+                              fontWeight: '800',
+                              cursor: 'pointer',
+                              fontSize: '0.82rem',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.04em',
+                              transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.1)'}
+                            onMouseLeave={e => e.currentTarget.style.filter = 'none'}
+                          >
+                            Confirm & Dispatch Order
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Footer */}
+            {pendingOrders.length > 0 && (
+              <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border-sidebar, rgba(255,255,255,0.07))', fontSize: '0.74rem', color: 'var(--text-muted, rgba(255,255,255,0.3))', textAlign: 'center', lineHeight: 1.5 }}>
+                Dispatch your rider. Money releases in the Transaction Ledger once the customer writes their PIN in the delivery book.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      </div>
+      {renderSimulatedMomoModal()}
+    </>
   );
 };
 

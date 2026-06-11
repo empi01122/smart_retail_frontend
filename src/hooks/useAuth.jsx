@@ -42,46 +42,67 @@ export const AuthProvider = ({ children }) => {
     const syncAuth = async () => {
       setAuthLoading(true);
       try {
-        if (isBypass) {
-          // Dev bypass mode: Use dummy token
-          setAuthToken('debug');
-          const profile = await getMyProfile();
-          if (active) {
-            setDbUser(profile);
+        // If Clerk is loaded and the user IS signed in, always use the real token
+        // regardless of any stale bypass flag in localStorage
+        if (clerkAuth.isLoaded && clerkAuth.isSignedIn) {
+          if (isBypass) {
+            // Clear stale bypass — real Clerk session takes priority
+            localStorage.removeItem('auth_bypass');
+            setIsBypass(false);
           }
-        } else if (clerkAuth.isLoaded && clerkAuth.isSignedIn) {
-          // Normal Clerk flow
-          const token = await clerkAuth.getToken();
+          // skipCache: true forces Clerk to always return a fresh, non-expired token
+          const token = await clerkAuth.getToken({ skipCache: true });
+          if (!token) {
+            console.warn('[useAuth] Could not get a valid token');
+            setAuthToken(null);
+            if (active) setDbUser(null);
+            return;
+          }
           setAuthToken(token);
           const profile = await getMyProfile();
-          if (active) {
-            setDbUser(profile);
-          }
+          if (active) setDbUser(profile);
+
+        } else if (isBypass) {
+          // Dev bypass mode: Use dummy token (only when Clerk is NOT signed in)
+          setAuthToken('debug');
+          const profile = await getMyProfile();
+          if (active) setDbUser(profile);
+
         } else if (clerkAuth.isLoaded && !clerkAuth.isSignedIn) {
-          // Not logged in
+          // Not logged in at all
           setAuthToken(null);
-          if (active) {
-            setDbUser(null);
-          }
+          if (active) setDbUser(null);
         }
       } catch (err) {
         console.error('Failed to sync auth with backend:', err);
-        // If profile fetch fails (e.g. backend offline or not registered), clear credentials
-        if (active) {
-          setDbUser(null);
+        // If bypass mode gets a 401, the backend bypass is OFF — clear the stale flag to stop the loop
+        if (isBypass && err?.response?.status === 401) {
+          console.warn('[useAuth] Backend rejected bypass token (ENABLE_DEV_BYPASS=False). Clearing stale bypass.');
+          localStorage.removeItem('auth_bypass');
+          setIsBypass(false);
+        } else if (!isBypass && (err?.response?.status === 401 || err?.response?.status === 403)) {
+          // Real Clerk session failed to authenticate with backend (explicit 401 or 403)
+          // We must sign out of Clerk to prevent infinite redirect loops
+          console.warn('[useAuth] Backend rejected Clerk token with 401/403. Clearing session & signing out of Clerk.');
+          setAuthToken(null);
+          try {
+            await clerkAuth.signOut();
+          } catch (signOutErr) {
+            console.error('Failed to sign out of Clerk:', signOutErr);
+          }
+        } else if (!isBypass) {
+          console.error('[useAuth] Non-auth error during sync (e.g. server offline, network error, or Clerk token issue):', err);
+          setAuthToken(null);
         }
+        if (active) setDbUser(null);
       } finally {
-        if (active) {
-          setAuthLoading(false);
-        }
+        if (active) setAuthLoading(false);
       }
     };
 
     syncAuth();
 
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, [isBypass, clerkAuth.isLoaded, clerkAuth.isSignedIn]);
 
   const value = {

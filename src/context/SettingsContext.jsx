@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { getStoreSettings } from '../services/settingsService';
+import { useAuth } from '../hooks/useAuth';
 
 export const SettingsContext = createContext();
 
@@ -22,6 +23,7 @@ const getThemeMode = (hex) => {
 
 
 export const SettingsProvider = ({ children }) => {
+  const { isAuthenticated } = useAuth();
   const [settings, setSettings] = useState({
     store_name: 'Smart Retail Shop',
     logo_url: '',
@@ -33,13 +35,31 @@ export const SettingsProvider = ({ children }) => {
 
   const fetchSettings = async () => {
     try {
-      const data = await getStoreSettings();
+      const activeEntId = localStorage.getItem('active_enterprise_id');
+      const data = await getStoreSettings(activeEntId);
       if (data) {
         setSettings(data);
-        applyThemeStyles(data);
+        // Do not let global store settings override the custom styling of public catalog page
+        if (!window.location.pathname.startsWith('/catalog')) {
+          applyThemeStyles(data);
+        }
       }
     } catch (error) {
       console.error('Error loading store settings:', error);
+      // Reset to default settings on authorization failures (e.g., logged out)
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        const defaultSettings = {
+          store_name: 'Smart Retail Shop',
+          logo_url: '',
+          primary_theme_color: '#4F46E5',
+          secondary_theme_color: '#F8FAFC',
+          accent_theme_color: '#F59E0B'
+        };
+        setSettings(defaultSettings);
+        if (!window.location.pathname.startsWith('/catalog')) {
+          applyThemeStyles(defaultSettings);
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -95,9 +115,8 @@ export const SettingsProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    // Initial load
     fetchSettings();
-  }, []);
+  }, [isAuthenticated]);
 
   return (
     <SettingsContext.Provider value={{ settings, loading, refreshSettings: fetchSettings, applyThemeStyles }}>

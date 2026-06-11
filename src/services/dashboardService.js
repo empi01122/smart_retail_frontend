@@ -14,3 +14,8 @@ export const getDashboardInsights = async () => {
   const response = await api.get('/dashboard/insights');
   return response.data;
 };
+
+export const getEnterpriseReviewsAll = async (enterpriseId) => {
+  const response = await api.get(`/enterprises/${enterpriseId}/reviews/all`);
+  return response.data;
+};

@@ -5,6 +5,7 @@ import Card from '../components/card';
 import Button from '../components/button';
 import Table from '../components/table';
 import Modal from '../components/modal';
+import { BoxIcon, PencilIcon } from '../components/icons';
 
 const titleCase = (text) => {
   if (!text || typeof text !== 'string') return '';
@@ -405,7 +406,19 @@ export const Products = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={modalMode === 'create' ? '📦 Register New Product' : `✏️ Edit Product #${currentProduct?.id}`}
+        title={
+          modalMode === 'create' ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <BoxIcon size={20} style={{ color: 'var(--primary-color)' }} />
+              <span>Register New Product</span>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <PencilIcon size={20} style={{ color: 'var(--primary-color)' }} />
+              <span>Edit Product #{currentProduct?.id}</span>
+            </div>
+          )
+        }
       >
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
@@ -434,7 +447,7 @@ export const Products = () => {
             />
           </div>
 
-          <div style={{ display: 'flex', gap: '16px' }}>
+          <div className="form-row">
             <div style={{ flex: 1 }}>
               <label htmlFor="price">Price (FCFA) *</label>
               <input
@@ -463,7 +476,7 @@ export const Products = () => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '16px' }}>
+          <div className="form-row">
             <div style={{ flex: 1 }}>
               <label htmlFor="category">Category</label>
               <input
@@ -504,7 +517,10 @@ export const Products = () => {
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                     />
                   ) : (
-                    <span style={{ fontSize: '1.1rem' }}>📸</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '22px', height: '22px', color: 'var(--text-muted)' }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15a2.25 2.25 0 002.25-2.25V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                    </svg>
                   )}
                 </div>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -520,9 +536,14 @@ export const Products = () => {
                     variant="secondary"
                     size="sm"
                     onClick={() => document.getElementById('product-file-input').click()}
+                    icon={
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '12px', height: '12px' }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.6-3.7A2.25 2.25 0 0012 9.75H4.5A2.25 2.25 0 002.25 12v5.25c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.75A2.25 2.25 0 0019.5 12h-2.25a2.25 2.25 0 00-1.664.733l-.8 1.05a2.25 2.25 0 01-1.664.733H12a2.25 2.25 0 01-1.664-.733l-.8-1.05a2.25 2.25 0 00-1.664-.733H4.5" />
+                      </svg>
+                    }
                     style={{ alignSelf: 'flex-start', padding: '4px 10px', fontSize: '0.75rem' }}
                   >
-                    📁 Choose Photo
+                    Choose Photo
                   </Button>
                   <input
                     id="product-form-img"

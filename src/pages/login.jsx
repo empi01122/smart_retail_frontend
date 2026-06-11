@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useSettings } from '../hooks/useSettings';
 import Button from '../components/button';
+import { WrenchIcon } from '../components/icons';
 
 export const Login = () => {
   const { isAuthenticated, loginBypass, loading } = useAuth();
@@ -23,7 +24,8 @@ export const Login = () => {
     navigate('/storefront');
   };
 
-  if (loading) {
+  // Only show full-page loading spinner if we are authenticated and loading the profile
+  if (loading && isAuthenticated) {
     return (
       <div style={{
         display: 'flex',
@@ -129,14 +131,22 @@ export const Login = () => {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-              <div style={{ fontSize: '1.5rem', background: 'rgba(79, 70, 229, 0.1)', padding: '10px', borderRadius: '10px', border: '1px solid rgba(79, 70, 229, 0.2)' }}>⚡</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(79, 70, 229, 0.1)', padding: '10px', borderRadius: '10px', border: '1px solid rgba(79, 70, 229, 0.2)', flexShrink: 0 }}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '24px', height: '24px', color: 'var(--primary-color)' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                </svg>
+              </div>
               <div>
                 <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '4px' }}>Real-time POS Checkout</h3>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Quick search items, process baskets, and automatically sync stock records.</p>
               </div>
             </div>
             <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-              <div style={{ fontSize: '1.5rem', background: 'rgba(245, 158, 11, 0.1)', padding: '10px', borderRadius: '10px', border: '1px solid rgba(245, 158, 11, 0.2)' }}>🔮</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(245, 158, 11, 0.1)', padding: '10px', borderRadius: '10px', border: '1px solid rgba(245, 158, 11, 0.2)', flexShrink: 0 }}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '24px', height: '24px', color: 'var(--accent-color)' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 21m0 0l-.813-5.096M9 21h3m-3 0H6m9.813-5.096A4.001 4.001 0 0015 8H9a4.001 4.001 0 00-5.813 2.904L2 15h14l-1.187-4.096z" />
+                </svg>
+              </div>
               <div>
                 <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '4px' }}>Gemini AI Store Insights</h3>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Receive machine-learning summaries of sales, revenue statistics and stock health warnings.</p>
@@ -147,61 +157,53 @@ export const Login = () => {
       </div>
 
       {/* Right Screen: Login Cards */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: '40px',
-        zIndex: 1,
-      }}>
+      <div className="login-right-pane">
         <div style={{ width: '100%', maxWidth: '400px' }}>
           {/* Clerk Login Interface wrapper */}
-          <div style={{ marginBottom: '24px' }}>
-            <SignIn
-              routing="hash"
-              signUpUrl="#/signup"
-              afterSignInUrl="#/storefront"
-              appearance={{
-                elements: {
-                  card: 'cl-card',
-                  headerTitle: 'cl-headerTitle',
-                  headerSubtitle: 'cl-headerSubtitle',
-                  socialButtonsBlockButton: 'cl-socialButtonsBlockButton',
-                  formLabelTrue: 'cl-formLabelTrue',
-                  formButtonPrimary: 'cl-formButtonPrimary',
-                  footerActionLink: 'cl-footerActionLink',
-                }
-              }}
-            />
+          <div style={{ marginBottom: '24px', minHeight: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {!clerkAuth.isLoaded || clerkAuth.isSignedIn ? (
+              <div style={{ textAlign: 'center' }}>
+                <style>{`
+                  @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                  }
+                `}</style>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  border: '3px solid rgba(255,255,255,0.1)',
+                  borderTopColor: 'var(--primary-color)',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite',
+                  margin: '0 auto 12px auto'
+                }} />
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                  {clerkAuth.isSignedIn ? "Syncing session..." : "Loading Clerk..."}
+                </p>
+              </div>
+            ) : (
+              <SignIn
+                routing="path"
+                path="/login"
+                afterSignInUrl="/storefront"
+                appearance={{
+                  elements: {
+                    card: 'cl-card',
+                    headerTitle: 'cl-headerTitle',
+                    headerSubtitle: 'cl-headerSubtitle',
+                    socialButtonsBlockButton: 'cl-socialButtonsBlockButton',
+                    formLabelTrue: 'cl-formLabelTrue',
+                    formButtonPrimary: 'cl-formButtonPrimary',
+                    footerActionLink: 'cl-footerActionLink',
+                  }
+                }}
+              />
+            )}
           </div>
 
-          {/* Dev Bypass Section */}
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.02)',
-            border: '1px solid rgba(255, 255, 255, 0.05)',
-            borderRadius: '16px',
-            padding: '20px',
-            textAlign: 'center',
-            backdropFilter: 'blur(10px)'
-          }}>
-            <h4 style={{ fontSize: '0.9rem', marginBottom: '6px', fontWeight: '600', color: 'var(--text-secondary)' }}>
-              🛠️ Local Development Bypass
-            </h4>
-            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '14px', lineHeight: 1.4 }}>
-              Offline or running local database? Securely login as mock administrator bypassing Clerk authentications.
-            </p>
-            <Button
-              id="dev-bypass-btn"
-              variant="secondary"
-              fullWidth
-              size="sm"
-              onClick={handleDevBypass}
-            >
-              Access via Mock Admin
-            </Button>
-          </div>
+
+
         </div>
       </div>
     </div>
