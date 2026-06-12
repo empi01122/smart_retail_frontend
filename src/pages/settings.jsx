@@ -946,7 +946,7 @@ export const Settings = () => {
                     disabled={isStaffDisabled}
                   >
                     <option value="employee">Staff / Cashier</option>
-                    <option value="admin">Store Owner / Admin</option>
+                    <option value="proprietor">Store Owner / Admin</option>
                   </select>
                 </div>
 

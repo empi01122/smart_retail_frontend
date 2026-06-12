@@ -11,6 +11,8 @@ export const Navbar = () => {
   const { settings } = useSettings();
   const navigate = useNavigate();
 
+  console.log('[Navbar Debug] role:', role, 'isAdmin:', isAdmin, 'isTechnician:', isTechnician, 'user:', user);
+
   const [enterprises, setEnterprises] = useState([]);
   const [selectedEntId, setSelectedEntId] = useState(
     localStorage.getItem('active_enterprise_id') || '1'
@@ -101,7 +103,7 @@ export const Navbar = () => {
           <path strokeLinecap="round" strokeLinejoin="round" d="M4 10l4 4 4-8 4 6 4-4" />
         </svg>
       ), 
-      roles: ['technician', 'proprietor', 'employee'] 
+      roles: ['technician', 'proprietor', 'owner', 'admin', 'employee'] 
     },
     { 
       path: '/settings', 
@@ -112,7 +114,7 @@ export const Navbar = () => {
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
       ), 
-      roles: ['technician', 'proprietor'] 
+      roles: ['technician', 'proprietor', 'owner', 'admin'] 
     },
   ];
 
@@ -123,20 +125,20 @@ export const Navbar = () => {
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
-          padding: '8px 12px 24px 12px',
+          padding: '6px 10px 14px 10px',
           borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-          marginBottom: '20px',
+          marginBottom: '12px',
         }}>
           <div style={{
-            width: '42px',
-            height: '42px',
-            borderRadius: '10px',
+            width: '36px',
+            height: '36px',
+            borderRadius: '8px',
             backgroundColor: settings?.logo_url ? 'transparent' : 'var(--primary-color)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '1.35rem',
-            boxShadow: settings?.logo_url ? 'none' : '0 4px 12px rgba(var(--primary-color-rgb), 0.3)',
+            fontSize: '1.1rem',
+            boxShadow: settings?.logo_url ? 'none' : '0 4px 10px rgba(var(--primary-color-rgb), 0.3)',
             color: '#ffffff',
             fontWeight: '800',
             flexShrink: 0,
@@ -151,16 +153,16 @@ export const Navbar = () => {
           </div>
           <div className="brand-text" style={{ flex: 1, overflow: 'hidden' }}>
             <h2 style={{
-              fontSize: '0.95rem',
+              fontSize: '0.85rem',
               margin: 0,
-              lineHeight: '1.3',
+              lineHeight: '1.2',
               wordBreak: 'break-word',
               color: 'var(--text-primary)'
             }}>
               {settings?.store_name || 'Smart Retail'}
             </h2>
             <span style={{
-              fontSize: '0.72rem',
+              fontSize: '0.65rem',
               color: 'var(--text-muted)',
               textTransform: 'uppercase',
               letterSpacing: '0.05em'
@@ -184,12 +186,12 @@ export const Navbar = () => {
               onChange={handleEnterpriseChange}
               style={{
                 width: '100%',
-                padding: '8px 12px',
+                padding: '5px 8px',
                 borderRadius: '6px',
                 border: '1px solid var(--input-border, rgba(255, 255, 255, 0.1))',
                 backgroundColor: 'var(--input-bg, rgba(255, 255, 255, 0.03))',
                 color: 'var(--text-primary, #ffffff)',
-                fontSize: '0.85rem',
+                fontSize: '0.8rem',
                 fontWeight: '600',
                 cursor: 'pointer',
                 outline: 'none'
@@ -205,12 +207,12 @@ export const Navbar = () => {
         )}
 
         <div style={{
-          padding: '10px 12px 20px 12px',
+          padding: '8px 10px 12px 10px',
           borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-          marginBottom: '20px',
+          marginBottom: '12px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '6px'
+          gap: '4px'
         }}>
           <label style={{ fontSize: '0.68rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--accent-color)', letterSpacing: '0.05em' }}>
             Role/Workspace View:
@@ -220,12 +222,12 @@ export const Navbar = () => {
             onChange={handleRoleChange}
             style={{
               width: '100%',
-              padding: '8px 12px',
+              padding: '5px 8px',
               borderRadius: '6px',
               border: '1px solid var(--input-border, rgba(255, 255, 255, 0.1))',
               backgroundColor: 'var(--input-bg, rgba(255, 255, 255, 0.03))',
               color: 'var(--text-primary, #ffffff)',
-              fontSize: '0.85rem',
+              fontSize: '0.8rem',
               fontWeight: '600',
               cursor: 'pointer',
               outline: 'none'

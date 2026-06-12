@@ -3,14 +3,15 @@ import { useAuth } from './useAuth';
 export const useRole = () => {
   const { user, isAuthenticated, loading } = useAuth();
 
-  const actualRole = user?.role || null;
+  const rawRole = user?.role || null;
+  const actualRole = (rawRole === 'admin' || rawRole === 'owner') ? 'proprietor' : rawRole;
   const isActualTechnician = isAuthenticated && actualRole === 'technician';
 
   let role = actualRole;
   if (isAuthenticated) {
     const savedRole = localStorage.getItem('active_role');
     if (savedRole) {
-      role = savedRole;
+      role = (savedRole === 'admin' || savedRole === 'owner') ? 'proprietor' : savedRole;
     }
   }
 

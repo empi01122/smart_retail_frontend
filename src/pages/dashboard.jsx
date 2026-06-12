@@ -167,17 +167,26 @@ export const Dashboard = () => {
   };
 
   const renderCustomSVGChart = () => {
-    const totalRev = summary?.total_revenue || 0;
-    const scaleFactor = totalRev > 0 ? (totalRev / 168000) : 1;
-    const rawPoints = [12000, 19000, 15000, 28000, 22000, 32000, 40000];
-    const dataPoints = rawPoints.map(p => Math.round(p * scaleFactor));
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const dailyRevData = summary?.daily_revenue || [
+      { day: 'Mon', revenue: 0 },
+      { day: 'Tue', revenue: 0 },
+      { day: 'Wed', revenue: 0 },
+      { day: 'Thu', revenue: 0 },
+      { day: 'Fri', revenue: 0 },
+      { day: 'Sat', revenue: 0 },
+      { day: 'Sun', revenue: 0 }
+    ];
+
+    const dataPoints = dailyRevData.map(d => d.revenue);
+    const days = dailyRevData.map(d => d.day);
+    const isZeroWeek = dataPoints.every(v => v === 0);
+    const chartColor = isZeroWeek ? '#ef4444' : 'var(--primary-color)';
 
     const width = 600;
     const height = 200;
     const padding = { top: 20, right: 30, bottom: 30, left: 75 };
 
-    const maxVal = Math.max(...dataPoints, 10000);
+    const maxVal = Math.max(...dataPoints, 1000);
     const minVal = 0;
 
     const points = dataPoints.map((val, idx) => {
@@ -204,8 +213,8 @@ export const Dashboard = () => {
         <svg viewBox={`0 0 ${width} ${height}`} style={{ width: '100%', height: '100%' }}>
           <defs>
             <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--primary-color)" stopOpacity="0.45" />
-              <stop offset="100%" stopColor="var(--primary-color)" stopOpacity="0.00" />
+              <stop offset="0%" stopColor={chartColor} stopOpacity="0.45" />
+              <stop offset="100%" stopColor={chartColor} stopOpacity="0.00" />
             </linearGradient>
           </defs>
 
@@ -260,12 +269,12 @@ export const Dashboard = () => {
           <path
             d={linePath}
             fill="none"
-            stroke="var(--primary-color)"
+            stroke={chartColor}
             strokeWidth="3"
             strokeLinecap="round"
             strokeLinejoin="round"
             style={{
-              filter: 'drop-shadow(0px 4px 8px rgba(var(--primary-color-rgb), 0.35))'
+              filter: isZeroWeek ? 'none' : 'drop-shadow(0px 4px 8px rgba(var(--primary-color-rgb), 0.35))'
             }}
           />
 
@@ -288,7 +297,7 @@ export const Dashboard = () => {
                   cx={p.x}
                   cy={p.y}
                   r={isHovered ? "6" : "4"}
-                  fill={isHovered ? "var(--accent-color)" : "var(--primary-color)"}
+                  fill={isHovered ? (isZeroWeek ? "#ff8787" : "var(--accent-color)") : chartColor}
                   stroke="var(--bg-app)"
                   strokeWidth="2"
                   onMouseEnter={() => setHoveredIndex(idx)}
@@ -323,7 +332,7 @@ export const Dashboard = () => {
               <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem', textTransform: 'uppercase', fontWeight: 'bold' }}>
                 {points[hoveredIndex].day} Revenue
               </span>
-              <strong style={{ color: 'var(--accent-color)', fontSize: '0.90rem', marginTop: '2px' }}>
+              <strong style={{ color: isZeroWeek ? '#ef4444' : 'var(--accent-color)', fontSize: '0.90rem', marginTop: '2px' }}>
                 {points[hoveredIndex].val.toLocaleString()} FCFA
               </strong>
             </>
