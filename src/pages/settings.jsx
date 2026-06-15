@@ -986,11 +986,34 @@ export const Settings = () => {
                       }}
                       className="table-row-hover"
                     >
-                      {/* Name & Email details */}
+                      {/* Name & Email details with avatar */}
                       <td style={{ padding: '16px 20px' }}>
-                        <div>
-                          <h4 style={{ fontSize: '0.9rem', margin: 0 }}>{staff.name}</h4>
-                          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{staff.email}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '50%',
+                            backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            overflow: 'hidden',
+                            flexShrink: 0
+                          }}>
+                            <img 
+                              src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(staff.email)}`}
+                              alt={staff.name} 
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              onError={(e) => {
+                                e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(staff.name)}&background=random&color=fff`;
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <h4 style={{ fontSize: '0.9rem', margin: 0 }}>{staff.name}</h4>
+                            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{staff.email}</span>
+                          </div>
                         </div>
                       </td>
 

@@ -12,8 +12,65 @@ const titleCase = (text) => {
   return text.trim().split(/\s+/).map(word => word[0]?.toUpperCase() + word.slice(1).toLowerCase()).join(' ');
 };
 
+const getProductEmoji = (category, name) => {
+  const cat = category?.toLowerCase() || '';
+  const n = name?.toLowerCase() || '';
+  
+  if (cat.includes('dairy') || n.includes('milk') || n.includes('cheese') || n.includes('butter')) return '🥛';
+  if (cat.includes('bakery') || n.includes('bread') || n.includes('baguette') || n.includes('croissant') || n.includes('flour')) return '🍞';
+  if (cat.includes('beverag') || cat.includes('drink') || n.includes('coffee') || n.includes('tea') || n.includes('juice') || n.includes('soda')) return '☕';
+  if (cat.includes('snack') || n.includes('chips') || n.includes('cookie') || n.includes('candy') || n.includes('chocolate')) return '🍪';
+  if (cat.includes('vitamin') || cat.includes('pharmacy') || cat.includes('health') || n.includes('pain') || n.includes('pill') || n.includes('tablet') || n.includes('relief')) return '💊';
+  if (cat.includes('personal') || n.includes('soap') || n.includes('shampoo') || n.includes('perfume')) return '🧼';
+  if (cat.includes('electronic') || cat.includes('accessori') || n.includes('keyboard') || n.includes('mouse') || n.includes('cable') || n.includes('charger') || n.includes('phone') || n.includes('usb')) return '💻';
+  
+  return '📦';
+};
+
+const getSvgFallback = (category, name) => {
+  const emoji = getProductEmoji(category, name);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100%" height="100%" fill="rgba(255,255,255,0.02)"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-size="40">${emoji}</text></svg>`;
+  try {
+    return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
+  } catch (e) {
+    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+  }
+};
+
+const getProductImage = (imageUrl, category, name) => {
+  if (imageUrl && imageUrl.trim() !== '') return imageUrl;
+
+  const cat = category?.toLowerCase() || '';
+  const n = name?.toLowerCase() || '';
+  
+  if (cat.includes('dairy') || n.includes('milk') || n.includes('cheese') || n.includes('butter')) {
+    return 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=400&auto=format&fit=crop&q=60';
+  }
+  if (cat.includes('bakery') || n.includes('bread') || n.includes('baguette') || n.includes('croissant') || n.includes('flour')) {
+    return 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&auto=format&fit=crop&q=60';
+  }
+  if (cat.includes('beverag') || cat.includes('drink') || n.includes('coffee') || n.includes('tea') || n.includes('juice') || n.includes('soda')) {
+    return 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400&auto=format&fit=crop&q=60';
+  }
+  if (cat.includes('snack') || n.includes('chips') || n.includes('cookie') || n.includes('candy') || n.includes('chocolate')) {
+    return 'https://images.unsplash.com/photo-1599490659213-e2b9527b0876?w=400&auto=format&fit=crop&q=60';
+  }
+  if (cat.includes('vitamin') || cat.includes('pharmacy') || cat.includes('health') || n.includes('pain') || n.includes('pill') || n.includes('tablet') || n.includes('relief')) {
+    return 'https://images.unsplash.com/photo-1584017911766-d451b3d0e843?w=400&auto=format&fit=crop&q=60';
+  }
+  if (cat.includes('personal') || n.includes('soap') || n.includes('shampoo') || n.includes('perfume')) {
+    return 'https://images.unsplash.com/photo-1607006342445-565a4c5f949c?w=400&auto=format&fit=crop&q=60';
+  }
+  if (cat.includes('electronic') || cat.includes('accessori') || n.includes('keyboard') || n.includes('mouse') || n.includes('cable') || n.includes('charger') || n.includes('phone') || n.includes('usb')) {
+    return 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=400&auto=format&fit=crop&q=60';
+  }
+  
+  return 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&auto=format&fit=crop&q=60';
+};
+
 export const Products = () => {
-  const { isAdmin } = useRole();
+  const { isAdmin, isEmployee } = useRole();
+  const canManage = isAdmin || isEmployee;
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -227,11 +284,11 @@ export const Products = () => {
         <div>
           <h1 style={{ fontSize: '1.8rem', marginBottom: '4px' }}>Inventory Catalog</h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
-            {isAdmin ? 'Create, view, edit or delete items.' : 'View current items in stock.'}
+            {canManage ? 'Create, view, edit or delete items.' : 'View current items in stock.'}
           </p>
         </div>
 
-        {isAdmin && (
+        {canManage && (
           <Button
             id="add-product-btn"
             variant="primary"
@@ -292,7 +349,7 @@ export const Products = () => {
       <Card padding="0px" style={{ overflow: 'hidden' }}>
         <Table
           headers={
-            isAdmin 
+            canManage 
               ? ['ID', 'Product Info', 'Category', 'Price', 'Stock Level', 'Actions']
               : ['ID', 'Product Info', 'Category', 'Price', 'Stock Level']
           }
@@ -329,13 +386,17 @@ export const Products = () => {
                     border: '1px solid var(--glass-card-border)',
                     flexShrink: 0
                   }}>
-                    {product.image_url ? (
-                      <img src={product.image_url} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '24px', height: '24px', color: 'var(--text-muted)' }}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 7.5h18M6 7.5v13.5a1.5 1.5 0 001.5 1.5h9a1.5 1.5 0 001.5-1.5V7.5M9 7.5V4.5a1.5 1.5 0 011.5-1.5h3A1.5 1.5 0 0115 4.5v3" />
-                      </svg>
-                    )}
+                    <img 
+                      src={getProductImage(product.image_url, product.category, product.name)} 
+                      alt={product.name} 
+                      onError={(e) => { 
+                        if (!e.currentTarget.dataset.error) {
+                          e.currentTarget.dataset.error = 'true';
+                          e.currentTarget.src = getSvgFallback(product.category, product.name);
+                        }
+                      }}
+                      style={{ width: '100%', height: '100%', objectFit: 'contain', backgroundColor: 'var(--glass-card-bg, rgba(255, 255, 255, 0.02))' }} 
+                    />
                   </div>
                   <div>
                     <h4 style={{ fontSize: '0.92rem', margin: 0, wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{titleCase(product.name)}</h4>
@@ -374,8 +435,8 @@ export const Products = () => {
                 {renderStockProgress(product.stock)}
               </td>
 
-              {/* Actions (Admin Only) */}
-              {isAdmin && (
+              {/* Actions (Staff Only) */}
+              {canManage && (
                 <td style={{ padding: '16px 20px' }}>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <Button
@@ -510,18 +571,17 @@ export const Products = () => {
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--primary-color)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)'; }}
                 >
-                  {formData.image_url ? (
-                    <img 
-                      src={formData.image_url} 
-                      alt="Product Preview" 
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                    />
-                  ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '22px', height: '22px', color: 'var(--text-muted)' }}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15a2.25 2.25 0 002.25-2.25V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
-                    </svg>
-                  )}
+                  <img 
+                    src={getProductImage(formData.image_url, formData.category, formData.name)} 
+                    alt="Product Preview" 
+                    onError={(e) => { 
+                      if (!e.currentTarget.dataset.error) {
+                        e.currentTarget.dataset.error = 'true';
+                        e.currentTarget.src = getSvgFallback(formData.category, formData.name);
+                      }
+                    }}
+                    style={{ width: '100%', height: '100%', objectFit: 'contain', backgroundColor: 'var(--glass-card-bg, rgba(255, 255, 255, 0.02))' }} 
+                  />
                 </div>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <input 

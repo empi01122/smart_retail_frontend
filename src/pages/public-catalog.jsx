@@ -30,6 +30,62 @@ const titleCase = (text) => {
   return text.trim().split(/\s+/).map(w => w[0]?.toUpperCase() + w.slice(1).toLowerCase()).join(' ');
 };
 
+const getProductEmoji = (category, name) => {
+  const cat = category?.toLowerCase() || '';
+  const n = name?.toLowerCase() || '';
+  
+  if (cat.includes('dairy') || n.includes('milk') || n.includes('cheese') || n.includes('butter')) return '🥛';
+  if (cat.includes('bakery') || n.includes('bread') || n.includes('baguette') || n.includes('croissant') || n.includes('flour')) return '🍞';
+  if (cat.includes('beverag') || cat.includes('drink') || n.includes('coffee') || n.includes('tea') || n.includes('juice') || n.includes('soda')) return '☕';
+  if (cat.includes('snack') || n.includes('chips') || n.includes('cookie') || n.includes('candy') || n.includes('chocolate')) return '🍪';
+  if (cat.includes('vitamin') || cat.includes('pharmacy') || cat.includes('health') || n.includes('pain') || n.includes('pill') || n.includes('tablet') || n.includes('relief')) return '💊';
+  if (cat.includes('personal') || n.includes('soap') || n.includes('shampoo') || n.includes('perfume')) return '🧼';
+  if (cat.includes('electronic') || cat.includes('accessori') || n.includes('keyboard') || n.includes('mouse') || n.includes('cable') || n.includes('charger') || n.includes('phone') || n.includes('usb')) return '💻';
+  
+  return '📦';
+};
+
+const getSvgFallback = (category, name) => {
+  const emoji = getProductEmoji(category, name);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100%" height="100%" fill="rgba(255,255,255,0.02)"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-size="40">${emoji}</text></svg>`;
+  try {
+    return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
+  } catch (e) {
+    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+  }
+};
+
+const getProductImage = (imageUrl, category, name) => {
+  if (imageUrl && imageUrl.trim() !== '') return imageUrl;
+
+  const cat = category?.toLowerCase() || '';
+  const n = name?.toLowerCase() || '';
+  
+  if (cat.includes('dairy') || n.includes('milk') || n.includes('cheese') || n.includes('butter')) {
+    return 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=400&auto=format&fit=crop&q=60';
+  }
+  if (cat.includes('bakery') || n.includes('bread') || n.includes('baguette') || n.includes('croissant') || n.includes('flour')) {
+    return 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&auto=format&fit=crop&q=60';
+  }
+  if (cat.includes('beverag') || cat.includes('drink') || n.includes('coffee') || n.includes('tea') || n.includes('juice') || n.includes('soda')) {
+    return 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400&auto=format&fit=crop&q=60';
+  }
+  if (cat.includes('snack') || n.includes('chips') || n.includes('cookie') || n.includes('candy') || n.includes('chocolate')) {
+    return 'https://images.unsplash.com/photo-1599490659213-e2b9527b0876?w=400&auto=format&fit=crop&q=60';
+  }
+  if (cat.includes('vitamin') || cat.includes('pharmacy') || cat.includes('health') || n.includes('pain') || n.includes('pill') || n.includes('tablet') || n.includes('relief')) {
+    return 'https://images.unsplash.com/photo-1584017911766-d451b3d0e843?w=400&auto=format&fit=crop&q=60';
+  }
+  if (cat.includes('personal') || n.includes('soap') || n.includes('shampoo') || n.includes('perfume')) {
+    return 'https://images.unsplash.com/photo-1607006342445-565a4c5f949c?w=400&auto=format&fit=crop&q=60';
+  }
+  if (cat.includes('electronic') || cat.includes('accessori') || n.includes('keyboard') || n.includes('mouse') || n.includes('cable') || n.includes('charger') || n.includes('phone') || n.includes('usb')) {
+    return 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=400&auto=format&fit=crop&q=60';
+  }
+  
+  return 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&auto=format&fit=crop&q=60';
+};
+
 const StarIcon = ({ filled, size = 18 }) => (
   <svg 
     xmlns="http://www.w3.org/2000/svg" 
@@ -76,9 +132,154 @@ const getApiBase = () => {
 // ─── Step state machine ────────────────────────────────────────────
 // "browse" → "checkout" → "paying" → "receipt"
 
+const TOUR_STEPS = [
+  {
+    target: '#customer-brand-header',
+    title: 'Supermarket Storefront',
+    content: 'Welcome! This is the active store you are shopping from. The branding, colors, and inventory are configured specifically by this supermarket.',
+    position: 'bottom'
+  },
+  {
+    target: '#customer-search-filters',
+    title: 'Browse and Search Products',
+    content: 'Filter items by category or search by typing keywords to quickly locate what you need. Click "Add to Cart" to build your order.',
+    position: 'bottom'
+  },
+  {
+    target: '#customer-cart-btn',
+    title: 'Your Shopping Basket',
+    content: 'Open the slide-out cart drawer anytime to review your items, adjust quantities, see price totals, and proceed to checkout.',
+    position: 'bottom'
+  },
+  {
+    target: '#customer-track-order-btn',
+    title: 'Track Orders & Escrow PINs',
+    content: 'Click here to track your active orders. Once paid via MoMo, you can view your secure delivery verification PIN or file disputes if items are incorrect.',
+    position: 'bottom'
+  },
+  {
+    target: '#customer-review-btn',
+    title: 'Submit Customer Reviews',
+    content: 'Click here to rate your shopping experience, leave comments, and view testimonials from other shoppers.',
+    position: 'top'
+  }
+];
+
 export const PublicCatalog = () => {
   const { isActualTechnician, role } = useRole();
   const timerRef = useRef(null);
+
+  // Guided Walkthrough Onboarding Tour States
+  const [tourActive, setTourActive] = useState(false);
+  const [currentStepIdx, setCurrentStepIdx] = useState(0);
+  const [highlightStyle, setHighlightStyle] = useState(null);
+
+  const handleFinishTour = () => {
+    setTourActive(false);
+    setCurrentStepIdx(0);
+    localStorage.setItem('customer_tour_completed', 'true');
+  };
+
+  useEffect(() => {
+    const tourCompleted = localStorage.getItem('customer_tour_completed');
+    if (!tourCompleted) {
+      const timer = setTimeout(() => {
+        setTourActive(true);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!tourActive) {
+      setHighlightStyle(null);
+      return;
+    }
+
+    const step = TOUR_STEPS[currentStepIdx];
+    if (!step) return;
+
+    const updateSpotlight = () => {
+      const el = document.querySelector(step.target);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+        setTimeout(() => {
+          const updatedRect = el.getBoundingClientRect();
+          setHighlightStyle({
+            position: 'fixed',
+            left: `${updatedRect.left - 8}px`,
+            top: `${updatedRect.top - 8}px`,
+            width: `${updatedRect.width + 16}px`,
+            height: `${updatedRect.height + 16}px`,
+            borderRadius: '12px',
+            boxShadow: '0 0 0 9999px rgba(15, 23, 42, 0.75)',
+            zIndex: 100000,
+            pointerEvents: 'none',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+          });
+        }, 300);
+      } else {
+        setHighlightStyle(null);
+      }
+    };
+
+    updateSpotlight();
+    window.addEventListener('resize', updateSpotlight);
+    return () => window.removeEventListener('resize', updateSpotlight);
+  }, [tourActive, currentStepIdx]);
+
+  const getPopoverStyle = (step) => {
+    const el = document.querySelector(step.target);
+    if (!el) return { display: 'none' };
+    
+    const rect = el.getBoundingClientRect();
+    const margin = 16;
+    
+    const styles = {
+      position: 'fixed',
+      zIndex: 100001,
+      width: '280px',
+      backgroundColor: 'var(--bg-sidebar, #111827)',
+      border: '1px solid var(--border-sidebar, rgba(255, 255, 255, 0.15))',
+      borderRadius: '12px',
+      padding: '16px',
+      boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5), var(--shadow-lg)',
+      color: 'var(--text-primary)',
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+    };
+
+    if (step.position === 'bottom') {
+      styles.top = `${rect.bottom + margin}px`;
+      styles.left = `${rect.left + rect.width / 2 - 140}px`;
+    } else if (step.position === 'top') {
+      styles.top = `${rect.top - 190 - margin}px`;
+      styles.left = `${rect.left + rect.width / 2 - 140}px`;
+    } else if (step.position === 'left') {
+      styles.top = `${rect.top + rect.height / 2 - 90}px`;
+      styles.left = `${rect.left - 280 - margin}px`;
+    } else if (step.position === 'right') {
+      styles.top = `${rect.top + rect.height / 2 - 90}px`;
+      styles.left = `${rect.right + margin}px`;
+    }
+
+    // Keep popover inside screen borders
+    const numericLeft = parseFloat(styles.left);
+    if (!isNaN(numericLeft)) {
+      if (numericLeft < 12) styles.left = '12px';
+      if (numericLeft + 280 > window.innerWidth - 12) {
+        styles.left = `${window.innerWidth - 280 - 12}px`;
+      }
+    }
+    const numericTop = parseFloat(styles.top);
+    if (!isNaN(numericTop)) {
+      if (numericTop < 12) styles.top = '12px';
+      if (numericTop + 200 > window.innerHeight - 12) {
+        styles.top = `${window.innerHeight - 200 - 12}px`;
+      }
+    }
+
+    return styles;
+  };
 
   const startSwiftChange = (id, delta) => {
     if (timerRef.current) return;
@@ -370,6 +571,7 @@ export const PublicCatalog = () => {
       }}>
         {!chatbotOpen && (
           <button
+            id="customer-review-btn"
             onClick={() => setChatbotOpen(true)}
             style={{
               padding: '12px 20px',
@@ -1840,9 +2042,40 @@ export const PublicCatalog = () => {
             <div style={{ backgroundColor: 'var(--glass-card-bg, rgba(255,255,255,0.03))', border: '1px solid var(--glass-card-border, rgba(255,255,255,0.07))', borderRadius: '12px', padding: '20px' }}>
               <h3 style={{ margin: '0 0 14px 0', fontSize: '0.9rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted, rgba(255,255,255,0.6))' }}>Your Order</h3>
               {cart.map(item => (
-                <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem' }}>
-                  <span style={{ color: 'var(--text-secondary, rgba(255,255,255,0.85))' }}>{titleCase(item.name)} × {item.qty}</span>
-                  <span style={{ fontWeight: '600', color: 'var(--accent-color, #F59E0B)' }}>{(item.price * item.qty).toLocaleString()} FCFA</span>
+                <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', gap: '12px', fontSize: '0.9rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
+                    {/* Small image thumbnail in Checkout Screen summary */}
+                    <div style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '6px',
+                      backgroundColor: 'rgba(255,255,255,0.02)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      overflow: 'hidden',
+                      border: '1px solid var(--glass-card-border, rgba(255,255,255,0.08))',
+                      flexShrink: 0
+                    }}>
+                      <img 
+                        src={getProductImage(item.image_url, item.category, item.name)} 
+                        alt={item.name} 
+                        onError={(e) => { 
+                          if (!e.currentTarget.dataset.error) {
+                            e.currentTarget.dataset.error = 'true';
+                            e.currentTarget.src = getSvgFallback(item.category, item.name);
+                          }
+                        }}
+                        style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '2px' }} 
+                      />
+                    </div>
+                    <span style={{ color: 'var(--text-secondary, rgba(255,255,255,0.85))', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                      {titleCase(item.name)} × {item.qty}
+                    </span>
+                  </div>
+                  <span style={{ fontWeight: '600', color: 'var(--accent-color, #F59E0B)', flexShrink: 0 }}>
+                    {(item.price * item.qty).toLocaleString()} FCFA
+                  </span>
                 </div>
               ))}
               <div style={{ borderTop: '1px dashed var(--bg-surface-border, rgba(255,255,255,0.1))', marginTop: '12px', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', fontWeight: '800', fontSize: '1rem' }}>
@@ -2191,7 +2424,7 @@ export const PublicCatalog = () => {
 
           {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', borderBottom: '1px solid var(--bg-surface-border)', paddingBottom: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div id="customer-brand-header" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
               {selectedEnt?.logo_url && (
                 <div style={{
                   width: '64px',
@@ -2217,8 +2450,45 @@ export const PublicCatalog = () => {
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+              {/* Help Tour button */}
+              <button
+                onClick={() => {
+                  setTourActive(true);
+                  setCurrentStepIdx(0);
+                }}
+                className="help-tour-btn"
+                style={{
+                  background: 'rgba(59, 130, 246, 0.12)',
+                  border: '1px solid rgba(59, 130, 246, 0.3)',
+                  borderRadius: '10px',
+                  padding: '10px 16px',
+                  cursor: 'pointer',
+                  color: 'var(--primary-color, #4F46E5)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '0.9rem',
+                  fontWeight: '700',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = 'rgba(59, 130, 246, 0.2)';
+                  e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = 'rgba(59, 130, 246, 0.12)';
+                  e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{ width: '15px', height: '15px' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
+                </svg>
+                Help Tour
+              </button>
+
               {/* Track Order button */}
               <button
+                id="customer-track-order-btn"
                 onClick={() => setTrackDrawerOpen(true)}
                 style={{
                   padding: '10px 18px',
@@ -2249,6 +2519,7 @@ export const PublicCatalog = () => {
 
               {/* Cart button */}
               <button
+                id="customer-cart-btn"
                 onClick={() => setCartOpen(true)}
                 style={{ position: 'relative', padding: '10px 18px', borderRadius: '10px', border: '1px solid var(--input-border)', backgroundColor: cartCount > 0 ? 'var(--primary-color)' : 'var(--input-bg)', color: cartCount > 0 ? '#fff' : 'var(--text-primary)', fontWeight: '700', cursor: 'pointer', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s' }}
               >
@@ -2262,7 +2533,7 @@ export const PublicCatalog = () => {
           </div>
 
           {/* Search & Filters */}
-          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center', backgroundColor: 'var(--bg-surface)', border: '1px solid var(--bg-surface-border)', borderRadius: '16px', padding: '16px' }}>
+          <div id="customer-search-filters" style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center', backgroundColor: 'var(--bg-surface)', border: '1px solid var(--bg-surface-border)', borderRadius: '16px', padding: '16px' }}>
             <div style={{ position: 'relative', flex: 1, minWidth: '260px' }}>
               <input
                 type="text"
@@ -2336,18 +2607,48 @@ export const PublicCatalog = () => {
 
                     {/* Image */}
                     <div style={{ height: '180px', width: '100%', backgroundColor: 'rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderBottom: '1px solid var(--glass-card-border)' }}>
-                      {product.image_url ? <img src={product.image_url} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '48px', height: '48px', color: 'var(--text-muted)' }}><path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25" /></svg>
-                      )}
+                      <img 
+                        src={getProductImage(product.image_url, product.category, product.name)} 
+                        alt={product.name} 
+                        onError={(e) => { 
+                          if (!e.currentTarget.dataset.error) {
+                            e.currentTarget.dataset.error = 'true';
+                            e.currentTarget.src = getSvgFallback(product.category, product.name);
+                          }
+                        }}
+                        style={{ width: '100%', height: '100%', objectFit: 'contain', backgroundColor: 'var(--glass-card-bg, rgba(255, 255, 255, 0.02))' }} 
+                      />
                     </div>
 
                     {/* Details */}
                     <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', flex: 1, gap: '8px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: '700', margin: 0, textTransform: 'capitalize', color: 'var(--text-primary)' }}>{product.name}</h3>
+                        <h3 style={{
+                          fontSize: '1rem',
+                          fontWeight: '700',
+                          margin: 0,
+                          textTransform: 'capitalize',
+                          color: 'var(--text-primary)',
+                          display: '-webkit-box',
+                          WebkitLineClamp: '2',
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          height: '2.6em',
+                          lineHeight: '1.3'
+                        }}>{product.name}</h3>
                         {product.category && <span style={{ padding: '3px 8px', borderRadius: '12px', fontSize: '0.68rem', fontWeight: '600', backgroundColor: 'var(--glass-card-bg)', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{product.category}</span>}
                       </div>
-                      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '2px 0 auto 0', lineHeight: '1.4' }}>{product.description || 'No description available.'}</p>
+                      <p style={{
+                        fontSize: '0.8rem',
+                        color: 'var(--text-muted)',
+                        margin: '2px 0 auto 0',
+                        lineHeight: '1.4',
+                        display: '-webkit-box',
+                        WebkitLineClamp: '2',
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        height: '2.8em'
+                      }}>{product.description || 'No description available.'}</p>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--glass-card-border)' }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                           <span style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--accent-color)' }}>{product.price.toLocaleString()} FCFA</span>
@@ -2499,6 +2800,31 @@ export const PublicCatalog = () => {
                   </div>
                 ) : cart.map(item => (
                   <div key={item.id} style={{ display: 'flex', gap: '12px', alignItems: 'center', padding: '12px', backgroundColor: 'var(--glass-card-bg)', borderRadius: '10px', border: '1px solid var(--glass-card-border)' }}>
+                    {/* Small image thumbnail in Customer Cart drawer */}
+                    <div style={{
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: '8px',
+                      backgroundColor: 'rgba(255,255,255,0.02)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      overflow: 'hidden',
+                      border: '1px solid var(--glass-card-border, rgba(255,255,255,0.08))',
+                      flexShrink: 0
+                    }}>
+                      <img 
+                        src={getProductImage(item.image_url, item.category, item.name)} 
+                        alt={item.name} 
+                        onError={(e) => { 
+                          if (!e.currentTarget.dataset.error) {
+                            e.currentTarget.dataset.error = 'true';
+                            e.currentTarget.src = getSvgFallback(item.category, item.name);
+                          }
+                        }}
+                        style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '2px' }} 
+                      />
+                    </div>
                     <div style={{ flex: 1 }}>
                       <p style={{ margin: '0 0 4px 0', fontWeight: '600', fontSize: '0.88rem', textTransform: 'capitalize', color: 'var(--text-primary)' }}>{item.name}</p>
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -2583,6 +2909,124 @@ export const PublicCatalog = () => {
       {renderReviewChatbot()}
       {renderAdPopup()}
       {renderDisputeModal()}
+
+      {/* Guided Onboarding Walkthrough Tour Overlay & Bubble */}
+      {tourActive && highlightStyle && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 99999, pointerEvents: 'none' }}>
+          {/* Spotlight Mask */}
+          <div style={highlightStyle} />
+          
+          {/* Popover Bubble */}
+          <div style={{ ...getPopoverStyle(TOUR_STEPS[currentStepIdx]), pointerEvents: 'auto' }}>
+            {/* Step header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <span style={{ fontSize: '0.72rem', fontWeight: '800', color: 'var(--primary-color)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Step {currentStepIdx + 1} of {TOUR_STEPS.length}
+              </span>
+              <button
+                onClick={handleFinishTour}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  padding: '2px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '4px',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{ width: '14px', height: '14px' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Title & Description */}
+            <h4 style={{ fontSize: '0.92rem', fontWeight: '700', margin: '0 0 8px 0', color: 'var(--text-primary)' }}>
+              {TOUR_STEPS[currentStepIdx].title}
+            </h4>
+            <p style={{ fontSize: '0.82rem', lineHeight: '1.45', color: 'var(--text-secondary)', margin: '0 0 16px 0' }}>
+              {TOUR_STEPS[currentStepIdx].content}
+            </p>
+
+            {/* Navigation Actions */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+              <button
+                onClick={handleFinishTour}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  fontSize: '0.78rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  borderRadius: '6px',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+              >
+                Skip
+              </button>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {currentStepIdx > 0 && (
+                  <button
+                    onClick={() => setCurrentStepIdx(prev => prev - 1)}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '6px',
+                      padding: '5px 10px',
+                      color: 'var(--text-primary)',
+                      fontSize: '0.78rem',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)'}
+                  >
+                    Back
+                  </button>
+                )}
+                
+                <button
+                  onClick={() => {
+                    if (currentStepIdx < TOUR_STEPS.length - 1) {
+                      setCurrentStepIdx(prev => prev + 1);
+                    } else {
+                      handleFinishTour();
+                    }
+                  }}
+                  style={{
+                    background: 'var(--primary-color)',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '5px 12px',
+                    color: '#ffffff',
+                    fontSize: '0.78rem',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    boxShadow: 'var(--shadow-md)',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.1)'}
+                  onMouseLeave={e => e.currentTarget.style.filter = 'none'}
+                >
+                  {currentStepIdx === TOUR_STEPS.length - 1 ? 'Finish' : 'Next'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

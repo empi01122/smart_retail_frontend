@@ -87,20 +87,30 @@ body::after {
 }
 
 /* Custom Premium Scrollbar */
+@keyframes scrollbarShimmer {
+  0% { background-position: 0 200%; }
+  100% { background-position: 0 -200%; }
+}
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.01);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, rgba(var(--primary-color-rgb), 0.1) 0%, rgba(var(--primary-color-rgb), 0.35) 50%, rgba(var(--primary-color-rgb), 0.1) 100%) !important;
+  background-size: 100% 200% !important;
+  animation: scrollbarShimmer 8s linear infinite !important;
   border-radius: var(--radius-sm);
-  transition: var(--transition-fast);
+  box-shadow: 0 0 6px rgba(var(--primary-color-rgb), 0.2) !important;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(var(--primary-color-rgb), 0.5);
+  background: var(--primary-color) !important;
+  box-shadow: 0 0 10px var(--primary-color) !important;
+  animation: none !important;
 }
 
 /* Typography & Headers */
@@ -259,9 +269,12 @@ label {
 @media (max-width: 640px) {
   .main-content {
     margin-left: 0;
-    padding: 15px;
-    padding-top: 75px; /* Spacer for top navbar in mobile */
-    padding-bottom: 80px; /* Spacer for bottom navbar in mobile */
+    padding: 10px !important;
+    padding-top: 70px !important; /* Spacer for top navbar in mobile (60px header + 10px gap) */
+    padding-bottom: 70px !important; /* Spacer for bottom navbar in mobile (60px nav + 10px gap) */
+    height: 100vh !important;
+    max-height: 100vh !important;
+    overflow: hidden !important;
   }
 }
 
@@ -351,12 +364,16 @@ label {
 }
 
 .sidebar-panel nav::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, rgba(var(--primary-color-rgb), 0.1) 0%, rgba(var(--primary-color-rgb), 0.3) 50%, rgba(var(--primary-color-rgb), 0.1) 100%) !important;
+  background-size: 100% 200% !important;
+  animation: scrollbarShimmer 8s linear infinite !important;
   border-radius: 2px;
 }
 
 .sidebar-panel nav::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--primary-color) !important;
+  box-shadow: 0 0 8px var(--primary-color) !important;
+  animation: none !important;
 }
 
 @media (max-width: 1024px) {
@@ -607,10 +624,30 @@ label {
 @media (max-width: 1024px) {
   .pos-layout-container {
     flex-direction: column;
-    gap: 20px;
-    height: auto;
-    max-height: none;
-    overflow: visible;
+    gap: 12px;
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+  }
+  
+  .pos-layout-container > div {
+    height: 100% !important;
+    max-height: 100% !important;
+    min-height: 0 !important;
+  }
+}
+
+/* Responsive adjustments for very small screens (native mobile look) */
+@media (max-width: 480px) {
+  .mobile-nav-link span:last-child {
+    display: none !important;
+  }
+  .mobile-nav-link {
+    max-width: 60px !important;
+    padding: 6px !important;
+  }
+  .mobile-store-name {
+    display: none !important;
   }
 }
 
@@ -692,4 +729,92 @@ label {
   display: inline-flex;
   align-items: center;
 }
+
+/* POS Storefront Responsiveness and Mobile Layout Classes */
+.pos-header-filters {
+  padding: 20px;
+  gap: 16px;
+  border-radius: 16px;
+}
+
+.pos-terminal-title {
+  font-size: 1.75rem;
+}
+
+.pos-product-card {
+  border-radius: 16px;
+  min-height: 215px;
+}
+
+@media (max-width: 640px) {
+  .pos-header-filters {
+    padding: 10px !important;
+    gap: 10px !important;
+    border-radius: 12px !important;
+  }
+  
+  .pos-terminal-title {
+    font-size: 1.2rem !important;
+  }
+  
+  .pos-total-items-badge {
+    display: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Hide tab label texts - leaving icons and badges only */
+  .pos-mobile-tab-text {
+    display: none !important;
+  }
+  
+  /* Hide product description to keep the card grid compact */
+  .pos-product-desc {
+    display: none !important;
+  }
+  
+  .pos-product-card {
+    min-height: 165px !important;
+    border-radius: 12px !important;
+  }
+  
+  /* Hide item image thumbnails in checkout ledger to reclaim width */
+  .pos-cart-item-img {
+    display: none !important;
+  }
+  
+  /* Make checkout ledger rows fit small screens cleanly */
+  .pos-cart-item {
+    padding: 4px 6px !important;
+    gap: 6px !important;
+  }
+  
+  .pos-cart-item-info h4 {
+    font-size: 0.78rem !important;
+  }
+  
+  .pos-cart-item-info span {
+    font-size: 0.7rem !important;
+  }
+  
+  .pos-cart-item-total span {
+    font-size: 0.8rem !important;
+  }
+  
+  .pos-cart-item-qty {
+    gap: 4px !important;
+  }
+  
+  .pos-cart-item-qty button {
+    width: 20px !important;
+    height: 20px !important;
+    font-size: 0.8rem !important;
+  }
+  
+  .pos-cart-item-qty input {
+    width: 32px !important;
+    font-size: 0.78rem !important;
+  }
+}
+
 

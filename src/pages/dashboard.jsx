@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getDashboardSummary, getTopProducts, getDashboardInsights, getEnterpriseReviewsAll } from '../services/dashboardService';
+import { getAllSales } from '../services/salesService';
 import { useSettings } from '../hooks/useSettings';
 import { useRole } from '../hooks/useRole';
 import Card from '../components/card';
@@ -20,6 +21,8 @@ export const Dashboard = () => {
   const [insights, setInsights] = useState(null);
   const [allReviews, setAllReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [sales, setSales] = useState([]);
+  const [salesLoading, setSalesLoading] = useState(true);
 
   const loadReviews = async () => {
     try {
@@ -42,37 +45,224 @@ export const Dashboard = () => {
   const [insightsLoading, setInsightsLoading] = useState(true);
   const [refreshingInsights, setRefreshingInsights] = useState(false);
 
+  const getWeekNumber = (date) => {
+    const tempDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = tempDate.getUTCDay() || 7;
+    tempDate.setUTCDate(tempDate.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(tempDate.getUTCFullYear(),0,1));
+    return Math.ceil((((tempDate - yearStart) / 86400000) + 1) / 7);
+  };
+
+  const getWeeklySalesDetails = () => {
+    const today = new Date();
+    const currentDay = today.getDay(); // 0 is Sunday, 1 is Monday...
+    const mondayDiff = currentDay === 0 ? -6 : 1 - currentDay;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + mondayDiff);
+    monday.setHours(0, 0, 0, 0);
+
+    const weekDates = [];
+    const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    
+    for (let i = 0; i < 7; i++) {
+      const dayDate = new Date(monday);
+      dayDate.setDate(monday.getDate() + i);
+      weekDates.push(dayDate);
+    }
+
+    const groupedSales = {};
+    weekDates.forEach(date => {
+      const dateStr = date.toISOString().slice(0, 10);
+      groupedSales[dateStr] = {
+        date: date,
+        dayName: weekDays[date.getDay() === 0 ? 6 : date.getDay() - 1],
+        sales: [],
+        total: 0
+      };
+    });
+
+    sales.forEach(sale => {
+      const saleDateStr = sale.created_at.slice(0, 10);
+      if (groupedSales[saleDateStr]) {
+        groupedSales[saleDateStr].sales.push(sale);
+        groupedSales[saleDateStr].total += sale.total_amount;
+      }
+    });
+
+    return {
+      groupedSales,
+      weekDates,
+      monday,
+      sunday: weekDates[6]
+    };
+  };
+
+  const titleCase = (text) => {
+    if (!text || typeof text !== 'string') return '';
+    return text.trim().split(/\s+/).map(word => word[0]?.toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+  };
+
   // CSV Export
   const handleExportCSV = () => {
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Smart Retail Business Metrics Report\n";
-    csvContent += `Generated At,${new Date().toLocaleString()}\n`;
-    csvContent += `Total Revenue,${summary?.total_revenue || 0} FCFA\n`;
-    csvContent += `Sales Count,${summary?.total_sales || 0}\n`;
-    csvContent += `Unique Products,${summary?.total_products || 0}\n`;
-    csvContent += `Low Stock Warnings,${summary?.low_stock_alerts || 0}\n\n`;
-    csvContent += "Best Selling Items\n";
-    csvContent += "Rank,Product,Units Sold,Revenue (FCFA)\n";
+    const { groupedSales, weekDates, monday } = getWeeklySalesDetails();
+    const activeDays = Object.values(groupedSales).filter(g => g.sales.length > 0);
+    const activeDatesStr = activeDays.map(g => g.date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })).join(', ');
+    const weekNum = getWeekNumber(monday);
+    const storeName = settings?.store_name || 'Smart Retail';
+    const currentYear = new Date().getFullYear();
+    const timeDownloaded = new Date().toLocaleString();
+    const formattedDateRange = `${weekDates[0].toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} to ${weekDates[6].toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    const weeklyRevenueTotal = Object.values(groupedSales).reduce((sum, d) => sum + d.total, 0);
+    const totalWeekTransactions = Object.values(groupedSales).reduce((sum, d) => sum + d.sales.length, 0);
+
+    let csvContent = "\ufeff"; // BOM for Excel UTF-8 support
+    
+    // Header Info (Tabular Banner)
+    csvContent += `WEEKLY PERFORMANCE REPORT,Enterprise Name: ${storeName},Report ID: Week ${weekNum} (${formattedDateRange}),Year: ${currentYear},Downloaded At: ${timeDownloaded}\n`;
+    csvContent += `Total Weekly Revenue,${weeklyRevenueTotal.toFixed(2)} FCFA,Total Sales Volume,${totalWeekTransactions} Transactions,Average Basket,${(totalWeekTransactions > 0 ? weeklyRevenueTotal / totalWeekTransactions : 0).toFixed(2)} FCFA\n\n`;
+
+    // Daily Performance Table with Excel formula bar graph
+    csvContent += `DAILY REVENUE PERFORMANCE TREND CHART\n`;
+    csvContent += `Day,Date,Total Sales,Daily Revenue (FCFA),Visual Trend Chart (Excel Formula Bar Graph)\n`;
+    
+    const maxDayTotal = Math.max(...Object.values(groupedSales).map(d => d.total), 1);
+    const scaleVal = maxDayTotal / 15 || 1;
+
+    Object.values(groupedSales).forEach((day, idx) => {
+      const rowIdx = 6 + idx; // Row 6 is Monday, Row 12 is Sunday
+      const excelGraphFormula = `"=REPT(""█"", ROUND(D${rowIdx}/${scaleVal.toFixed(2)}, 0))"`;
+      csvContent += `${day.dayName},${day.date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })},${day.sales.length},${day.total.toFixed(2)},${excelGraphFormula}\n`;
+    });
+    // Add total row at Row 13
+    csvContent += `Total,,${totalWeekTransactions},${weeklyRevenueTotal.toFixed(2)},"=REPT(""█"", 15)"\n\n`;
+
+    // Itemized Transaction Log Table (Compacted and formatted)
+    csvContent += `ITEMIZED WEEKLY TRANSACTION LOGS\n`;
+    csvContent += `Date,Time,Transaction ID,Items Sold,Payment Method,Amount (FCFA)\n`;
+    Object.values(groupedSales).forEach(day => {
+      const dateStr = day.date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+      if (day.sales.length > 0) {
+        day.sales.forEach(s => {
+          const saleTime = new Date(s.created_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+          const itemsDesc = s.items?.map(i => `${i.quantity}x ${i.product_name}`).join(' | ') || 'No item data';
+          const payMethod = s.payment_method === 'mobile_money' ? 'Mobile Money' : 'Cash';
+          csvContent += `${dateStr},${saleTime},#${s.id},"${itemsDesc}",${payMethod},${s.total_amount.toFixed(2)}\n`;
+        });
+      }
+      csvContent += `${dateStr},Day Subtotal,-,-,-,${day.total.toFixed(2)} FCFA\n`;
+    });
+    csvContent += `\n`;
+
+    // Product Rankings
+    csvContent += `WEEKLY BEST SELLING ITEMS\n`;
+    csvContent += `Rank,Product Name,Units Sold,Revenue (FCFA)\n`;
     topProducts.forEach((p, idx) => {
       csvContent += `${idx + 1},"${p.product}",${p.units_sold},${p.revenue.toFixed(2)}\n`;
     });
-    const encodedUri = encodeURI(csvContent);
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `smart_retail_report_${new Date().toISOString().slice(0,10)}.csv`);
+    const datesCompact = `${weekDates[0].getMonth() + 1}_${weekDates[0].getDate()}_to_${weekDates[6].getMonth() + 1}_${weekDates[6].getDate()}`;
+    const safeStoreName = storeName.replace(/[^a-zA-Z0-9]/g, '_');
+    const safeDates = (activeDatesStr || formattedDateRange).replace(/[^a-zA-Z0-9]/g, '_');
+    const safeTime = timeDownloaded.replace(/[^a-zA-Z0-9]/g, '-').replace(/\s+/g, '_');
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Report_For_${safeStoreName}_-_Week_${weekNum}_(${safeDates})_-_${currentYear}_${safeTime}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  // PDF Export via Styled Print Preview
+  // PDF Export via html2pdf.js direct download
   const handleExportPDF = () => {
-    const printWindow = window.open('', '_blank', 'width=800,height=900');
-    if (!printWindow) {
-      alert("Please allow popups to export reports as PDF.");
-      return;
-    }
-    
+    const { groupedSales, weekDates, monday } = getWeeklySalesDetails();
+    const activeDays = Object.values(groupedSales).filter(g => g.sales.length > 0);
+    const activeDatesStr = activeDays.map(g => g.date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })).join(', ');
+    const weekNum = getWeekNumber(monday);
+    const storeName = settings?.store_name || 'Smart Retail';
+    const currentYear = new Date().getFullYear();
+    const timeDownloaded = new Date().toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    const formattedDateRange = `${weekDates[0].toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} to ${weekDates[6].toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    const weeklyRevenueTotal = Object.values(groupedSales).reduce((sum, d) => sum + d.total, 0);
+
+    const getSVGChartHTML = () => {
+      const defaultDays = [
+        { day: 'Mon', revenue: 0 },
+        { day: 'Tue', revenue: 0 },
+        { day: 'Wed', revenue: 0 },
+        { day: 'Thu', revenue: 0 },
+        { day: 'Fri', revenue: 0 },
+        { day: 'Sat', revenue: 0 },
+        { day: 'Sun', revenue: 0 }
+      ];
+      
+      const dailyRevData = defaultDays.map(d => {
+        const matchingDbDay = summary?.daily_revenue?.find(
+          dbDay => dbDay.day.toLowerCase().slice(0, 3) === d.day.toLowerCase()
+        );
+        return {
+          day: d.day,
+          revenue: matchingDbDay ? matchingDbDay.revenue : 0
+        };
+      });
+
+      const dataPoints = dailyRevData.map(d => d.revenue);
+      const days = dailyRevData.map(d => d.day);
+      const maxVal = Math.max(...dataPoints, 1000);
+      const minVal = 0;
+
+      const width = 600;
+      const height = 180;
+      const padding = { top: 20, right: 30, bottom: 25, left: 95 };
+
+      const points = dataPoints.map((val, idx) => {
+        const x = padding.left + (idx * (width - padding.left - padding.right) / 6);
+        const y = height - padding.bottom - ((val - minVal) / (maxVal - minVal) * (height - padding.top - padding.bottom));
+        return { x, y };
+      });
+
+      let linePath = `M ${points[0].x} ${points[0].y}`;
+      for (let i = 1; i < points.length; i++) {
+        const prev = points[i - 1];
+        const curr = points[i];
+        const cpX1 = prev.x + (curr.x - prev.x) / 2;
+        const cpY1 = prev.y;
+        const cpX2 = prev.x + (curr.x - prev.x) / 2;
+        const cpY2 = curr.y;
+        linePath += ` C ${cpX1} ${cpY1}, ${cpX2} ${cpY2}, ${curr.x} ${curr.y}`;
+      }
+
+      const areaPath = `${linePath} L ${points[points.length - 1].x} ${height - padding.bottom} L ${points[0].x} ${height - padding.bottom} Z`;
+
+      const gridLines = [0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => {
+        const y = padding.top + ratio * (height - padding.top - padding.bottom);
+        const gridVal = Math.round(maxVal - ratio * (maxVal - minVal));
+        return `
+          <line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4 4" />
+          <text x="${padding.left - 10}" y="${y}" fill="#64748b" font-size="9px" text-anchor="end" dominant-baseline="middle" font-family="monospace">${gridVal.toLocaleString()}</text>
+        `;
+      }).join('');
+
+      const xAxisDays = points.map((p, idx) => `
+        <text x="${p.x}" y="${height - 6}" fill="#475569" font-size="10px" font-weight="600" text-anchor="middle">${days[idx]}</text>
+      `).join('');
+
+      const dots = points.map((p, idx) => `
+        <circle cx="${p.x}" cy="${p.y}" r="4" fill="#4f46e5" stroke="#ffffff" stroke-width="2" />
+      `).join('');      return `
+        <div style="margin-top: 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 10px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="width: 100%; height: auto; display: block;">
+            ${gridLines}
+            ${xAxisDays}
+            <path d="${areaPath}" fill="#4f46e5" fill-opacity="0.1" />
+            <path d="${linePath}" fill="none" stroke="#4f46e5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+            ${dots}
+          </svg>
+        </div>
+      `;
+    };
+
     const productsHtml = topProducts.map((p, idx) => `
       <tr style="border-bottom: 1px solid #e2e8f0;">
         <td style="padding: 10px; font-weight: bold;">${idx + 1}</td>
@@ -82,92 +272,193 @@ export const Dashboard = () => {
       </tr>
     `).join('');
 
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Smart Retail Report - ${settings?.store_name || 'Storefront'}</title>
-          <style>
-            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1e293b; padding: 40px; }
-            .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #4f46e5; padding-bottom: 20px; margin-bottom: 30px; }
-            .title { font-size: 24px; font-weight: 800; color: #4f46e5; margin: 0; }
-            .subtitle { font-size: 14px; color: #64748b; margin: 5px 0 0 0; }
-            .meta { font-size: 12px; color: #94a3b8; text-align: right; }
-            .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px; }
-            .kpi-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; text-align: center; }
-            .kpi-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin: 0 0 8px 0; }
-            .kpi-val { font-size: 18px; font-weight: bold; color: #0f172a; margin: 0; }
-            .section-title { font-size: 16px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin: 30px 0 15px 0; }
-            table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-            th { background: #f1f5f9; text-align: left; padding: 10px; color: #475569; }
-            td { padding: 10px; border-bottom: 1px solid #e2e8f0; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <div>
-              <h1 class="title">${settings?.store_name?.toUpperCase() || 'SMART RETAIL SHOP'}</h1>
-              <p class="subtitle">Executive Business Intelligence Report</p>
-            </div>
-            <div class="meta">
-              <strong>Report Date:</strong> ${new Date().toLocaleString()}<br/>
-              <strong>Plan Tier:</strong> ULTRA Premium
-            </div>
+    const salesBreakdownHtml = Object.values(groupedSales).map(day => {
+      let itemsTable = '';
+      if (day.sales.length === 0) {
+        itemsTable = `
+          <div style="font-style: italic; color: #94a3b8; font-size: 12px; padding: 6px 10px;">
+            No transactions recorded on this day.
           </div>
+        `;
+      } else {
+        const rows = day.sales.map(s => {
+          const saleTime = new Date(s.created_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          const itemsDesc = s.items?.map(i => `${i.quantity}x ${titleCase(i.product_name)}`).join(', ') || 'No item data';
+          const payMethod = s.payment_method === 'mobile_money' ? 'Mobile Money' : 'Cash';
           
-          <div class="grid">
-            <div class="kpi-card">
-              <p class="kpi-title">Total Gross Revenue</p>
-              <h3 class="kpi-val" style="color: #d97706;">${summary?.total_revenue?.toLocaleString()} FCFA</h3>
-            </div>
-            <div class="kpi-card">
-              <p class="kpi-title">Transactions Processed</p>
-              <h3 class="kpi-val">${summary?.total_sales ?? 0}</h3>
-            </div>
-            <div class="kpi-card">
-              <p class="kpi-title">Catalog Size</p>
-              <h3 class="kpi-val">${summary?.total_products ?? 0} Items</h3>
-            </div>
-            <div class="kpi-card">
-              <p class="kpi-title">Low Stock Warnings</p>
-              <h3 class="kpi-val" style="color: #ef4444;">${summary?.low_stock_alerts ?? 0} Alerts</h3>
-            </div>
-          </div>
-
-          <h3 class="section-title">Product Sales Performance Rankings</h3>
-          <table>
+          return `
+            <tr style="border-bottom: 1px dashed #e2e8f0;">
+              <td style="padding: 6px 10px; color: #64748b;">${saleTime}</td>
+              <td style="padding: 6px 10px; font-weight: 600;">#${s.id}</td>
+              <td style="padding: 6px 10px; font-size: 11px; max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${itemsDesc}">${itemsDesc}</td>
+              <td style="padding: 6px 10px; color: #475569;">${payMethod}</td>
+              <td style="padding: 6px 10px; text-align: right; font-weight: bold; color: #0f172a;">${s.total_amount.toFixed(2)} FCFA</td>
+            </tr>
+          `;
+        }).join('');
+        
+        itemsTable = `
+          <table style="width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 12px;">
             <thead>
-              <tr>
-                <th style="width: 50px;">Rank</th>
-                <th>Product Name</th>
-                <th style="text-align: center; width: 100px;">Units Sold</th>
-                <th style="text-align: right; width: 150px;">Revenue</th>
+              <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; text-align: left;">
+                <th style="padding: 6px 10px; color: #64748b; font-weight: 600; width: 80px;">Time</th>
+                <th style="padding: 6px 10px; color: #64748b; font-weight: 600; width: 60px;">ID</th>
+                <th style="padding: 6px 10px; color: #64748b; font-weight: 600;">Items Sold</th>
+                <th style="padding: 6px 10px; color: #64748b; font-weight: 600; width: 100px;">Payment</th>
+                <th style="padding: 6px 10px; color: #64748b; font-weight: 600; text-align: right; width: 120px;">Amount</th>
               </tr>
             </thead>
             <tbody>
-              ${productsHtml || '<tr><td colspan="4" style="text-align: center;">No product sales recorded yet.</td></tr>'}
+              ${rows}
             </tbody>
           </table>
-
-          <h3 class="section-title">Automated AI Insights & Recommendations</h3>
-          <div style="background: #f8fafc; border-left: 4px solid #4f46e5; padding: 15px; font-size: 12px; line-height: 1.6; white-space: pre-line;">
-            ${insights || 'No AI insights generated for this period.'}
+        `;
+      }
+      
+      return `
+        <div style="margin-bottom: 20px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; page-break-inside: avoid;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px; margin-bottom: 8px;">
+            <strong style="color: #4f46e5; font-size: 13px;">${day.dayName} (${day.date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })})</strong>
+            <span style="font-weight: bold; color: #d97706; font-size: 13px;">Daily Total: ${day.total.toLocaleString()} FCFA</span>
           </div>
+          ${itemsTable}
+        </div>
+      `;
+    }).join('');
 
-          <p style="text-align: center; font-size: 11px; color: #94a3b8; margin-top: 50px; border-top: 1px dashed #cbd5e1; padding-top: 15px;">
-            Confidential — Generated by Smart Retail System AI for Store Administration.
-          </p>
+    const loadHtml2Pdf = () => {
+      return new Promise((resolve, reject) => {
+        if (window.html2pdf) {
+          resolve(window.html2pdf);
+          return;
+        }
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+        script.onload = () => resolve(window.html2pdf);
+        script.onerror = () => reject(new Error('Failed to load html2pdf.js'));
+        document.head.appendChild(script);
+      });
+    };
 
-          <script>
-            window.onload = function() { window.print(); setTimeout(function() { window.close(); }, 600); }
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+    loadHtml2Pdf().then((html2pdf) => {
+      const parent = document.createElement('div');
+      parent.style.position = 'fixed';
+      parent.style.left = '0';
+      parent.style.top = '0';
+      parent.style.width = '794px';
+      parent.style.height = '0';
+      parent.style.overflow = 'hidden';
+      parent.style.zIndex = '-9999';
+
+      const element = document.createElement('div');
+      element.style.width = '794px';
+      element.style.boxSizing = 'border-box';
+      element.style.background = '#ffffff';
+      element.style.padding = '40px';
+      element.style.color = '#1e293b';
+      element.style.fontFamily = "'Helvetica Neue', Helvetica, Arial, sans-serif";
+      
+      element.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #4f46e5; padding-bottom: 20px; margin-bottom: 30px;">
+          <div>
+            <h1 style="font-size: 24px; font-weight: 800; color: #4f46e5; margin: 0;">${storeName.toUpperCase()}</h1>
+            <p style="font-size: 14px; color: #64748b; margin: 5px 0 0 0;">Weekly Business Performance Report</p>
+          </div>
+          <div style="font-size: 12px; color: #94a3b8; text-align: right;">
+            <strong>Report ID:</strong> Week ${weekNum} (${formattedDateRange})<br/>
+            <strong>Downloaded At:</strong> ${new Date().toLocaleDateString()} ${timeDownloaded}<br/>
+            <strong>Plan Tier:</strong> ULTRA Premium
+          </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px;">
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; text-align: center;">
+            <p style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin: 0 0 8px 0;">Weekly Revenue</p>
+            <h3 style="font-size: 18px; font-weight: bold; color: #d97706; margin: 0;">${weeklyRevenueTotal.toLocaleString()} FCFA</h3>
+          </div>
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; text-align: center;">
+            <p style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin: 0 0 8px 0;">Transactions Processed</p>
+            <h3 style="font-size: 18px; font-weight: bold; color: #0f172a; margin: 0;">${summary?.total_sales ?? 0}</h3>
+          </div>
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; text-align: center;">
+            <p style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin: 0 0 8px 0;">Catalog Size</p>
+            <h3 style="font-size: 18px; font-weight: bold; color: #0f172a; margin: 0;">${summary?.total_products ?? 0} Items</h3>
+          </div>
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; text-align: center;">
+            <p style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin: 0 0 8px 0;">Low Stock Warnings</p>
+            <h3 style="font-size: 18px; font-weight: bold; color: #ef4444; margin: 0;">${summary?.low_stock_alerts ?? 0} Alerts</h3>
+          </div>
+        </div>
+
+        <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin: 30px 0 15px 0;">Revenue Trend Graph</h3>
+        ${getSVGChartHTML()}
+
+        <div style="page-break-before: always;"></div>
+
+        <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin: 30px 0 15px 0;">Daily Sales Breakdowns & Receipts</h3>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          ${salesBreakdownHtml}
+        </div>
+
+        <div style="page-break-before: always;"></div>
+
+        <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin: 30px 0 15px 0;">Product Sales Performance Rankings</h3>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px;">
+          <thead>
+            <tr style="background: #f1f5f9; text-align: left;">
+              <th style="width: 50px; padding: 10px;">Rank</th>
+              <th style="padding: 10px;">Product Name</th>
+              <th style="text-align: center; width: 100px; padding: 10px;">Units Sold</th>
+              <th style="text-align: right; width: 150px; padding: 10px;">Revenue</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${productsHtml || '<tr><td colspan="4" style="text-align: center;">No product sales recorded yet.</td></tr>'}
+          </tbody>
+        </table>
+
+        <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin: 30px 0 15px 0;">Automated AI Insights & Recommendations</h3>
+        <div style="background: #f8fafc; border-left: 4px solid #4f46e5; padding: 15px; font-size: 12px; line-height: 1.6; white-space: pre-line;">
+          ${insights || 'No AI insights generated for this period.'}
+        </div>
+
+        <p style="text-align: center; font-size: 11px; color: #94a3b8; margin-top: 50px; border-top: 1px dashed #cbd5e1; padding-top: 15px;">
+          Confidential — Generated by Smart Retail System AI for Store Administration.
+        </p>
+      `;
+
+      const safeStoreName = storeName.replace(/[^a-zA-Z0-9]/g, '_');
+      const safeDates = (activeDatesStr || formattedDateRange).replace(/[^a-zA-Z0-9]/g, '_');
+      const safeTime = timeDownloaded.replace(/[^a-zA-Z0-9]/g, '-').replace(/\s+/g, '_');
+      const filename = `Report_For_${safeStoreName}_-_Week_${weekNum}_(${safeDates})_-_${currentYear}_${safeTime}.pdf`;
+
+      const opt = {
+        margin:       0,
+        filename:     filename,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      parent.appendChild(element);
+      document.body.appendChild(parent);
+
+      setTimeout(() => {
+        html2pdf().set(opt).from(element).save().then(() => {
+          document.body.removeChild(parent);
+        }).catch(err => {
+          console.error('Error saving PDF:', err);
+          document.body.removeChild(parent);
+        });
+      }, 250);
+    }).catch(err => {
+      console.error('Error loading html2pdf:', err);
+      alert('Could not download PDF report because html2pdf library failed to load.');
+    });
   };
 
   const renderCustomSVGChart = () => {
-    const dailyRevData = summary?.daily_revenue || [
+    const defaultDays = [
       { day: 'Mon', revenue: 0 },
       { day: 'Tue', revenue: 0 },
       { day: 'Wed', revenue: 0 },
@@ -176,6 +467,16 @@ export const Dashboard = () => {
       { day: 'Sat', revenue: 0 },
       { day: 'Sun', revenue: 0 }
     ];
+    
+    const dailyRevData = defaultDays.map(d => {
+      const matchingDbDay = summary?.daily_revenue?.find(
+        dbDay => dbDay.day.toLowerCase().slice(0, 3) === d.day.toLowerCase()
+      );
+      return {
+        day: d.day,
+        revenue: matchingDbDay ? matchingDbDay.revenue : 0
+      };
+    });
 
     const dataPoints = dailyRevData.map(d => d.revenue);
     const days = dailyRevData.map(d => d.day);
@@ -184,7 +485,7 @@ export const Dashboard = () => {
 
     const width = 600;
     const height = 200;
-    const padding = { top: 20, right: 30, bottom: 30, left: 75 };
+    const padding = { top: 20, right: 30, bottom: 30, left: 95 };
 
     const maxVal = Math.max(...dataPoints, 1000);
     const minVal = 0;
@@ -235,7 +536,8 @@ export const Dashboard = () => {
                 />
                 <text
                   x={padding.left - 10}
-                  y={y + 4}
+                  y={y}
+                  dominantBaseline="middle"
                   fill="var(--text-muted)"
                   fontSize="9px"
                   textAnchor="end"
@@ -380,6 +682,18 @@ export const Dashboard = () => {
     }
   };
 
+  const loadSales = async () => {
+    try {
+      setSalesLoading(true);
+      const data = await getAllSales();
+      setSales(data || []);
+    } catch (error) {
+      console.error('Error loading sales list for dashboard:', error);
+    } finally {
+      setSalesLoading(false);
+    }
+  };
+
   const handleRefreshInsights = () => {
     setRefreshingInsights(true);
     loadInsights();
@@ -389,6 +703,7 @@ export const Dashboard = () => {
     loadMetrics();
     loadTopProducts();
     loadInsights();
+    loadSales();
     if (tier === 'ultra') {
       loadReviews();
     }
@@ -516,6 +831,7 @@ export const Dashboard = () => {
               onClick={() => {
                 loadMetrics();
                 loadTopProducts();
+                loadSales();
                 handleRefreshInsights();
                 if (tier === 'ultra') loadReviews();
               }}

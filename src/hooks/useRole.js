@@ -24,7 +24,8 @@ export const useRole = () => {
     isAdmin: isAuthenticated && (role === 'proprietor' || role === 'technician'),
     isEmployee: isAuthenticated && role === 'employee',
     isAuthenticated,
-    loading
+    loading,
+    user
   };
 };
 

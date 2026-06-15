@@ -11,6 +11,62 @@ const titleCase = (text) => {
   return text.trim().split(/\s+/).map(word => word[0]?.toUpperCase() + word.slice(1).toLowerCase()).join(' ');
 };
 
+const getProductEmoji = (category, name) => {
+  const cat = category?.toLowerCase() || '';
+  const n = name?.toLowerCase() || '';
+  
+  if (cat.includes('dairy') || n.includes('milk') || n.includes('cheese') || n.includes('butter')) return '🥛';
+  if (cat.includes('bakery') || n.includes('bread') || n.includes('baguette') || n.includes('croissant') || n.includes('flour')) return '🍞';
+  if (cat.includes('beverag') || cat.includes('drink') || n.includes('coffee') || n.includes('tea') || n.includes('juice') || n.includes('soda')) return '☕';
+  if (cat.includes('snack') || n.includes('chips') || n.includes('cookie') || n.includes('candy') || n.includes('chocolate')) return '🍪';
+  if (cat.includes('vitamin') || cat.includes('pharmacy') || cat.includes('health') || n.includes('pain') || n.includes('pill') || n.includes('tablet') || n.includes('relief')) return '💊';
+  if (cat.includes('personal') || n.includes('soap') || n.includes('shampoo') || n.includes('perfume')) return '🧼';
+  if (cat.includes('electronic') || cat.includes('accessori') || n.includes('keyboard') || n.includes('mouse') || n.includes('cable') || n.includes('charger') || n.includes('phone') || n.includes('usb')) return '💻';
+  
+  return '📦';
+};
+
+const getSvgFallback = (category, name) => {
+  const emoji = getProductEmoji(category, name);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100%" height="100%" fill="rgba(255,255,255,0.02)"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-size="40">${emoji}</text></svg>`;
+  try {
+    return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
+  } catch (e) {
+    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+  }
+};
+
+const getProductImage = (imageUrl, category, name) => {
+  if (imageUrl && imageUrl.trim() !== '') return imageUrl;
+
+  const cat = category?.toLowerCase() || '';
+  const n = name?.toLowerCase() || '';
+  
+  if (cat.includes('dairy') || n.includes('milk') || n.includes('cheese') || n.includes('butter')) {
+    return 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=400&auto=format&fit=crop&q=60';
+  }
+  if (cat.includes('bakery') || n.includes('bread') || n.includes('baguette') || n.includes('croissant') || n.includes('flour')) {
+    return 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&auto=format&fit=crop&q=60';
+  }
+  if (cat.includes('beverag') || cat.includes('drink') || n.includes('coffee') || n.includes('tea') || n.includes('juice') || n.includes('soda')) {
+    return 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400&auto=format&fit=crop&q=60';
+  }
+  if (cat.includes('snack') || n.includes('chips') || n.includes('cookie') || n.includes('candy') || n.includes('chocolate')) {
+    return 'https://images.unsplash.com/photo-1599490659213-e2b9527b0876?w=400&auto=format&fit=crop&q=60';
+  }
+  if (cat.includes('vitamin') || cat.includes('pharmacy') || cat.includes('health') || n.includes('pain') || n.includes('pill') || n.includes('tablet') || n.includes('relief')) {
+    return 'https://images.unsplash.com/photo-1584017911766-d451b3d0e843?w=400&auto=format&fit=crop&q=60';
+  }
+  if (cat.includes('personal') || n.includes('soap') || n.includes('shampoo') || n.includes('perfume')) {
+    return 'https://images.unsplash.com/photo-1607006342445-565a4c5f949c?w=400&auto=format&fit=crop&q=60';
+  }
+  if (cat.includes('electronic') || cat.includes('accessori') || n.includes('keyboard') || n.includes('mouse') || n.includes('cable') || n.includes('charger') || n.includes('phone') || n.includes('usb')) {
+    return 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=400&auto=format&fit=crop&q=60';
+  }
+  
+  return 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&auto=format&fit=crop&q=60';
+};
+
 export const Sales = () => {
   const { isTechnician, isAdmin } = useRole();
   const [sales, setSales] = useState([]);
@@ -259,18 +315,46 @@ export const Sales = () => {
                                     backgroundColor: 'var(--glass-card-bg)',
                                     border: '1px solid var(--glass-card-border)',
                                     borderRadius: '8px',
-                                    fontSize: '0.85rem'
+                                    fontSize: '0.85rem',
+                                    gap: '12px'
                                   }}
                                 >
-                                  <div>
-                                    <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>
-                                      {titleCase(item.product_name) || `Product #${item.product_id}`}
-                                    </span>
-                                    <span style={{ color: 'var(--text-muted)', marginLeft: '8px' }}>
-                                      (x{item.quantity} units @ {item.unit_price.toFixed(2)} FCFA)
-                                    </span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
+                                    {/* Small image thumbnail in Worker Transaction Ledger details */}
+                                    <div style={{
+                                      width: '36px',
+                                      height: '36px',
+                                      borderRadius: '6px',
+                                      backgroundColor: 'rgba(255,255,255,0.02)',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      overflow: 'hidden',
+                                      border: '1px solid var(--glass-card-border, rgba(255,255,255,0.08))',
+                                      flexShrink: 0
+                                    }}>
+                                      <img 
+                                        src={getProductImage(item.image_url, item.category, item.product_name)} 
+                                        alt={item.product_name} 
+                                        onError={(e) => { 
+                                          if (!e.currentTarget.dataset.error) {
+                                            e.currentTarget.dataset.error = 'true';
+                                            e.currentTarget.src = getSvgFallback(item.category, item.product_name);
+                                          }
+                                        }}
+                                        style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '2px' }} 
+                                      />
+                                    </div>
+                                    <div style={{ overflow: 'hidden' }}>
+                                      <span style={{ fontWeight: '600', color: 'var(--text-primary)', display: 'block', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                                        {titleCase(item.product_name) || `Product #${item.product_id}`}
+                                      </span>
+                                      <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+                                        x{item.quantity} units @ {item.unit_price.toFixed(2)} FCFA
+                                      </span>
+                                    </div>
                                   </div>
-                                  <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>
+                                  <span style={{ fontWeight: '700', color: 'var(--text-primary)', flexShrink: 0 }}>
                                     {(item.quantity * item.unit_price).toFixed(2)} FCFA
                                   </span>
                                 </div>

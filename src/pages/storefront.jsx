@@ -12,9 +12,209 @@ const titleCase = (text) => {
   return text.trim().split(/\s+/).map(word => word[0]?.toUpperCase() + word.slice(1).toLowerCase()).join(' ');
 };
 
+const getProductEmoji = (category, name) => {
+  const cat = category?.toLowerCase() || '';
+  const n = name?.toLowerCase() || '';
+  
+  if (cat.includes('dairy') || n.includes('milk') || n.includes('cheese') || n.includes('butter')) return '🥛';
+  if (cat.includes('bakery') || n.includes('bread') || n.includes('baguette') || n.includes('croissant') || n.includes('flour')) return '🍞';
+  if (cat.includes('beverag') || cat.includes('drink') || n.includes('coffee') || n.includes('tea') || n.includes('juice') || n.includes('soda')) return '☕';
+  if (cat.includes('snack') || n.includes('chips') || n.includes('cookie') || n.includes('candy') || n.includes('chocolate')) return '🍪';
+  if (cat.includes('vitamin') || cat.includes('pharmacy') || cat.includes('health') || n.includes('pain') || n.includes('pill') || n.includes('tablet') || n.includes('relief')) return '💊';
+  if (cat.includes('personal') || n.includes('soap') || n.includes('shampoo') || n.includes('perfume')) return '🧼';
+  if (cat.includes('electronic') || cat.includes('accessori') || n.includes('keyboard') || n.includes('mouse') || n.includes('cable') || n.includes('charger') || n.includes('phone') || n.includes('usb')) return '💻';
+  
+  return '📦';
+};
+
+const getSvgFallback = (category, name) => {
+  const emoji = getProductEmoji(category, name);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100%" height="100%" fill="rgba(255,255,255,0.02)"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-size="40">${emoji}</text></svg>`;
+  try {
+    return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
+  } catch (e) {
+    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+  }
+};
+
+const getProductImage = (imageUrl, category, name) => {
+  if (imageUrl && imageUrl.trim() !== '') return imageUrl;
+
+  const cat = category?.toLowerCase() || '';
+  const n = name?.toLowerCase() || '';
+  
+  if (cat.includes('dairy') || n.includes('milk') || n.includes('cheese') || n.includes('butter')) {
+    return 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=400&auto=format&fit=crop&q=60';
+  }
+  if (cat.includes('bakery') || n.includes('bread') || n.includes('baguette') || n.includes('croissant') || n.includes('flour')) {
+    return 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&auto=format&fit=crop&q=60';
+  }
+  if (cat.includes('beverag') || cat.includes('drink') || n.includes('coffee') || n.includes('tea') || n.includes('juice') || n.includes('soda')) {
+    return 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400&auto=format&fit=crop&q=60';
+  }
+  if (cat.includes('snack') || n.includes('chips') || n.includes('cookie') || n.includes('candy') || n.includes('chocolate')) {
+    return 'https://images.unsplash.com/photo-1599490659213-e2b9527b0876?w=400&auto=format&fit=crop&q=60';
+  }
+  if (cat.includes('vitamin') || cat.includes('pharmacy') || cat.includes('health') || n.includes('pain') || n.includes('pill') || n.includes('tablet') || n.includes('relief')) {
+    return 'https://images.unsplash.com/photo-1584017911766-d451b3d0e843?w=400&auto=format&fit=crop&q=60';
+  }
+  if (cat.includes('personal') || n.includes('soap') || n.includes('shampoo') || n.includes('perfume')) {
+    return 'https://images.unsplash.com/photo-1607006342445-565a4c5f949c?w=400&auto=format&fit=crop&q=60';
+  }
+  if (cat.includes('electronic') || cat.includes('accessori') || n.includes('keyboard') || n.includes('mouse') || n.includes('cable') || n.includes('charger') || n.includes('phone') || n.includes('usb')) {
+    return 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=400&auto=format&fit=crop&q=60';
+  }
+  
+  return 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&auto=format&fit=crop&q=60';
+};
+const TOUR_STEPS = [
+  {
+    target: '#pos-search-input',
+    title: 'Product Search & Filters',
+    content: 'Quickly find products by typing their title, description, or code here. You can also filter products by selecting the category badges below.',
+    position: 'bottom'
+  },
+  {
+    target: '#pos-product-grid',
+    title: 'Store Product Catalog',
+    content: 'Browse all available catalog items here. Click on any active product card to immediately add it to the shopping cart.',
+    position: 'right'
+  },
+  {
+    target: '#pos-cart-section',
+    title: 'Interactive Shopping Cart',
+    content: 'Review the customer\'s selections here. You can click "+" or "-" to adjust quantities, remove items, or clear the cart.',
+    position: 'left'
+  },
+  {
+    target: '#payment-method-select',
+    title: 'Payment Method Selection',
+    content: 'Choose how the transaction will be settled. Cash Payment is standard, or select Mobile Money (MoMo) for electronic payment collection.',
+    position: 'top'
+  },
+  {
+    target: '#checkout-submit-btn',
+    title: 'Complete Transaction',
+    content: 'Click here to process the checkout. This will write the transaction to the ledger, deduct stock levels, and generate a printable invoice receipt.',
+    position: 'top'
+  }
+];
+
 export const Storefront = () => {
   const { settings } = useSettings();
   const [products, setProducts] = useState([]);
+
+  // Guided Walkthrough Onboarding Tour States
+  const [tourActive, setTourActive] = useState(false);
+  const [currentStepIdx, setCurrentStepIdx] = useState(0);
+  const [highlightStyle, setHighlightStyle] = useState(null);
+
+  const handleFinishTour = () => {
+    setTourActive(false);
+    setCurrentStepIdx(0);
+    localStorage.setItem('storefront_tour_completed', 'true');
+  };
+
+  useEffect(() => {
+    const tourCompleted = localStorage.getItem('storefront_tour_completed');
+    if (!tourCompleted) {
+      const timer = setTimeout(() => {
+        setTourActive(true);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!tourActive) {
+      setHighlightStyle(null);
+      return;
+    }
+
+    const step = TOUR_STEPS[currentStepIdx];
+    if (!step) return;
+
+    const updateSpotlight = () => {
+      const el = document.querySelector(step.target);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+        setTimeout(() => {
+          const updatedRect = el.getBoundingClientRect();
+          setHighlightStyle({
+            position: 'fixed',
+            left: `${updatedRect.left - 8}px`,
+            top: `${updatedRect.top - 8}px`,
+            width: `${updatedRect.width + 16}px`,
+            height: `${updatedRect.height + 16}px`,
+            borderRadius: '12px',
+            boxShadow: '0 0 0 9999px rgba(15, 23, 42, 0.75)',
+            zIndex: 100000,
+            pointerEvents: 'none',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+          });
+        }, 300);
+      } else {
+        setHighlightStyle(null);
+      }
+    };
+
+    updateSpotlight();
+    window.addEventListener('resize', updateSpotlight);
+    return () => window.removeEventListener('resize', updateSpotlight);
+  }, [tourActive, currentStepIdx]);
+
+  const getPopoverStyle = (step) => {
+    const el = document.querySelector(step.target);
+    if (!el) return { display: 'none' };
+    
+    const rect = el.getBoundingClientRect();
+    const margin = 16;
+    
+    const styles = {
+      position: 'fixed',
+      zIndex: 100001,
+      width: '280px',
+      backgroundColor: 'var(--bg-sidebar, #111827)',
+      border: '1px solid var(--border-sidebar, rgba(255, 255, 255, 0.15))',
+      borderRadius: '12px',
+      padding: '16px',
+      boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5), var(--shadow-lg)',
+      color: 'var(--text-primary)',
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+    };
+
+    if (step.position === 'bottom') {
+      styles.top = `${rect.bottom + margin}px`;
+      styles.left = `${rect.left + rect.width / 2 - 140}px`;
+    } else if (step.position === 'top') {
+      styles.top = `${rect.top - 190 - margin}px`;
+      styles.left = `${rect.left + rect.width / 2 - 140}px`;
+    } else if (step.position === 'left') {
+      styles.top = `${rect.top + rect.height / 2 - 90}px`;
+      styles.left = `${rect.left - 280 - margin}px`;
+    } else if (step.position === 'right') {
+      styles.top = `${rect.top + rect.height / 2 - 90}px`;
+      styles.left = `${rect.right + margin}px`;
+    }
+
+    // Keep popover inside screen borders
+    const numericLeft = parseFloat(styles.left);
+    if (!isNaN(numericLeft)) {
+      if (numericLeft < 12) styles.left = '12px';
+      if (numericLeft + 280 > window.innerWidth - 12) {
+        styles.left = `${window.innerWidth - 280 - 12}px`;
+      }
+    }
+    const numericTop = parseFloat(styles.top);
+    if (!isNaN(numericTop)) {
+      if (numericTop < 12) styles.top = '12px';
+      if (numericTop + 200 > window.innerHeight - 12) {
+        styles.top = `${window.innerHeight - 200 - 12}px`;
+      }
+    }
+
+    return styles;
+  };
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -704,14 +904,14 @@ export const Storefront = () => {
             onClick={() => setMobileTab('catalog')}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
           >
-            <ProductsIcon size={16} /> Products ({products.length})
+            <ProductsIcon size={16} /> <span className="pos-mobile-tab-text">Products ({products.length})</span>
           </button>
           <button
             className={`pos-mobile-tab ${mobileTab === 'cart' ? 'active' : ''}`}
             onClick={() => setMobileTab('cart')}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
           >
-            <CartIcon size={16} /> Cart Ledger {cart.length > 0 && <span className="cart-badge">{cart.reduce((sum, item) => sum + item.quantity, 0)}</span>}
+            <CartIcon size={16} /> <span className="pos-mobile-tab-text">Cart Ledger</span> {cart.length > 0 && <span className="cart-badge">{cart.reduce((sum, item) => sum + item.quantity, 0)}</span>}
           </button>
           {/* Notification Bell — mobile */}
           <button
@@ -733,22 +933,56 @@ export const Storefront = () => {
         flex: 1.8,
         display: (!isMobileView || mobileTab === 'catalog') ? 'flex' : 'none',
         flexDirection: 'column',
-        gap: '20px'
+        gap: '12px',
+        height: '100%',
+        maxHeight: '100%',
+        minHeight: 0
       }}>
         
         {/* Header and filters */}
-        <div style={{
+        <div className="pos-header-filters" style={{
           display: 'flex',
           flexDirection: 'column',
-          gap: '16px',
-          padding: '20px',
-          borderRadius: '16px',
           background: 'rgba(255, 255, 255, 0.02)',
           border: '1px solid rgba(255, 255, 255, 0.05)'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <h1 style={{ fontSize: '1.75rem', margin: 0 }}>Register Terminal</h1>
+              <h1 className="pos-terminal-title" style={{ margin: 0 }}>Register Terminal</h1>
+              <button
+                onClick={() => {
+                  setTourActive(true);
+                  setCurrentStepIdx(0);
+                }}
+                className="help-tour-btn"
+                style={{
+                  background: 'rgba(59, 130, 246, 0.15)',
+                  border: '1px solid rgba(59, 130, 246, 0.3)',
+                  borderRadius: '10px',
+                  padding: '6px 12px',
+                  cursor: 'pointer',
+                  color: '#60a5fa',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '0.8rem',
+                  fontWeight: '600',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = 'rgba(59, 130, 246, 0.25)';
+                  e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = 'rgba(59, 130, 246, 0.15)';
+                  e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{ width: '14px', height: '14px' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
+                </svg>
+                Help Tour
+              </button>
               {!isMobileView && (
                 <button
                   onClick={() => setNotifOpen(o => !o)}
@@ -776,7 +1010,7 @@ export const Storefront = () => {
                 </button>
               )}
             </div>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+            <span className="pos-total-items-badge" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
               Total items active: <strong>{products.length}</strong>
             </span>
           </div>
@@ -835,13 +1069,14 @@ export const Storefront = () => {
             <p style={{ color: 'var(--text-muted)' }}>No products match your criteria.</p>
           </div>
         ) : (
-          <div style={{
+          <div id="pos-product-grid" className="pos-product-grid" style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-            gap: '16px',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+            gap: '10px',
             overflowY: 'auto',
-            maxHeight: 'calc(100vh - 240px)',
-            paddingRight: '6px'
+            flex: 1,
+            minHeight: 0,
+            paddingRight: '4px'
           }}>
             {filteredProducts.map((product) => {
               const outOfStock = product.stock <= 0;
@@ -852,11 +1087,10 @@ export const Storefront = () => {
                   key={product.id}
                   id={`product-card-${product.id}`}
                   onClick={() => !outOfStock && addToCart(product)}
+                  className="pos-product-card"
                   style={{
                     backgroundColor: 'var(--glass-card-bg)',
                     border: '1px solid var(--glass-card-border)',
-                    borderRadius: '16px',
-                    padding: '16px',
                     cursor: outOfStock ? 'not-allowed' : 'pointer',
                     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                     display: 'flex',
@@ -884,67 +1118,97 @@ export const Storefront = () => {
                       position: 'absolute',
                       top: '12px',
                       right: '12px',
-                      padding: '2px 8px',
+                      zIndex: 10,
+                      padding: '3px 8px',
                       borderRadius: '12px',
                       fontSize: '0.62rem',
                       fontWeight: '700',
                       textTransform: 'uppercase',
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                      color: 'var(--text-secondary)'
+                      backgroundColor: 'rgba(0, 0, 0, 0.65)',
+                      color: '#ffffff',
+                      backdropFilter: 'blur(4px)'
                     }}>
                       {product.category}
                     </span>
                   )}
 
-                  {/* Thumbnail / Image placeholder */}
+                  {/* Cover Image container */}
                   <div style={{
-                    height: '110px',
-                    borderRadius: '10px',
-                    backgroundColor: 'rgba(255,255,255,0.02)',
+                    height: '90px',
+                    width: '100%',
+                    backgroundColor: 'rgba(0,0,0,0.15)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    marginBottom: '12px',
                     overflow: 'hidden',
-                    border: '1px solid rgba(255,255,255,0.03)'
+                    borderBottom: '1px solid var(--glass-card-border)',
+                    flexShrink: 0
                   }}>
-                    {product.image_url ? (
-                      <img src={product.image_url} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }} />
-                    ) : (
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '48px', height: '48px', color: 'var(--text-muted)' }}><path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m6 4.125l2.25 2.25m0 0l2.25 2.25M12 13.875l2.25-2.25M12 13.875l-2.25 2.25M15 12H9" /></svg>
-                    )}
+                    <img 
+                      src={getProductImage(product.image_url, product.category, product.name)} 
+                      alt={product.name} 
+                      onError={(e) => { 
+                        if (!e.currentTarget.dataset.error) {
+                          e.currentTarget.dataset.error = 'true';
+                          e.currentTarget.src = getSvgFallback(product.category, product.name);
+                        }
+                      }}
+                      style={{ width: '100%', height: '100%', objectFit: 'contain', backgroundColor: 'var(--glass-card-bg, rgba(255, 255, 255, 0.02))' }} 
+                    />
                   </div>
 
-                  <h3 style={{ fontSize: '0.95rem', margin: '0 0 6px 0', wordBreak: 'break-word', overflowWrap: 'anywhere', whiteSpace: 'normal' }}>
-                    {titleCase(product.name)}
-                  </h3>
-
-                  <p style={{
-                    fontSize: '0.78rem',
-                    color: 'var(--text-muted)',
-                    margin: '0 0 12px 0',
-                    lineHeight: '1.3',
-                    flexGrow: 1,
-                    whiteSpace: 'normal',
-                    wordBreak: 'break-word',
-                    overflowWrap: 'anywhere'
-                  }}>
-                    {product.description || 'No description provided.'}
-                  </p>
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
-                    <span style={{ fontWeight: '800', color: 'var(--text-primary)', fontSize: '1.05rem' }}>
-                      {product.price.toFixed(2)} FCFA
-                    </span>
-                    
-                    {/* Stock status indicator */}
-                    <span style={{
-                      fontSize: '0.72rem',
-                      fontWeight: '600',
-                      color: outOfStock ? 'var(--color-danger)' : lowStock ? 'var(--color-warning)' : 'var(--color-success)',
+                  {/* Card content with padding */}
+                  <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', flex: 1, gap: '4px' }}>
+                    <h3 style={{
+                      fontSize: '0.85rem',
+                      fontWeight: '700',
+                      margin: '0 0 2px 0',
+                      wordBreak: 'break-word',
+                      overflowWrap: 'anywhere',
+                      whiteSpace: 'normal',
+                      color: 'var(--text-primary)',
+                      display: '-webkit-box',
+                      WebkitLineClamp: '2',
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      height: '2.4em',
+                      lineHeight: '1.2'
                     }}>
-                      {outOfStock ? 'Out of stock' : lowStock ? `Only ${product.stock} left` : `${product.stock} units`}
-                    </span>
+                      {titleCase(product.name)}
+                    </h3>
+
+                    <p className="pos-product-desc" style={{
+                      fontSize: '0.72rem',
+                      color: 'var(--text-muted)',
+                      margin: '0 0 8px 0',
+                      lineHeight: '1.25',
+                      flexGrow: 1,
+                      whiteSpace: 'normal',
+                      wordBreak: 'break-word',
+                      overflowWrap: 'anywhere',
+                      display: '-webkit-box',
+                      WebkitLineClamp: '2',
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      height: '2.5em'
+                    }}>
+                      {product.description || 'No description provided.'}
+                    </p>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
+                      <span style={{ fontWeight: '800', color: 'var(--text-primary)', fontSize: '0.88rem' }}>
+                        {product.price.toFixed(2)} FCFA
+                      </span>
+                      
+                      {/* Stock status indicator */}
+                      <span style={{
+                        fontSize: '0.68rem',
+                        fontWeight: '600',
+                        color: outOfStock ? 'var(--color-danger)' : lowStock ? 'var(--color-warning)' : 'var(--color-success)',
+                      }}>
+                        {outOfStock ? 'Out of stock' : lowStock ? `Only ${product.stock} left` : `${product.stock} units`}
+                      </span>
+                    </div>
                   </div>
                 </div>
               );
@@ -954,7 +1218,7 @@ export const Storefront = () => {
       </div>
 
       {/* RIGHT COLUMN: Interactive Shopping Cart (POS Side Drawer) */}
-      <div style={{
+      <div id="pos-cart-section" style={{
         flex: 1.1,
         display: (!isMobileView || mobileTab === 'cart') ? 'flex' : 'none',
         flexDirection: 'column',
@@ -964,7 +1228,8 @@ export const Storefront = () => {
       }}>
         <Card
           title="Shopping Cart"
-          subtitle="Customer selection ledger"
+          subtitle={isMobileView ? null : "Customer selection ledger"}
+          padding={isMobileView ? '16px' : '24px'}
           style={{ height: '100%', background: 'var(--bg-sidebar)', border: '1px solid var(--border-sidebar)' }}
           actions={
             cart.length > 0 && (
@@ -1012,6 +1277,7 @@ export const Storefront = () => {
                 {cart.map(item => (
                   <div
                     key={item.product.id}
+                    className="pos-cart-item"
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -1022,7 +1288,33 @@ export const Storefront = () => {
                       borderRadius: '8px'
                     }}
                   >
-                    <div style={{ flex: 1, overflow: 'hidden' }}>
+                    {/* Small image thumbnail in POS checkout cart ledger */}
+                    <div className="pos-cart-item-img" style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '6px',
+                      backgroundColor: 'rgba(255,255,255,0.02)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      overflow: 'hidden',
+                      border: '1px solid rgba(255,255,255,0.05)',
+                      flexShrink: 0
+                    }}>
+                      <img 
+                        src={getProductImage(item.product.image_url, item.product.category, item.product.name)} 
+                        alt={item.product.name} 
+                        onError={(e) => { 
+                          if (!e.currentTarget.dataset.error) {
+                            e.currentTarget.dataset.error = 'true';
+                            e.currentTarget.src = getSvgFallback(item.product.category, item.product.name);
+                          }
+                        }}
+                        style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '2px' }} 
+                      />
+                    </div>
+
+                    <div className="pos-cart-item-info" style={{ flex: 1, overflow: 'hidden' }}>
                       <h4 style={{ fontSize: '0.85rem', margin: 0, wordBreak: 'break-word', overflowWrap: 'anywhere', whiteSpace: 'normal', lineHeight: 1.3 }}>
                         {titleCase(item.product.name)}
                       </h4>
@@ -1032,7 +1324,7 @@ export const Storefront = () => {
                     </div>
 
                     {/* Quantity controls */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div className="pos-cart-item-qty" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <button
                         onMouseDown={() => startSwiftChange(item.product.id, -1, item.product.stock)}
                         onMouseUp={stopSwiftChange}
@@ -1102,7 +1394,7 @@ export const Storefront = () => {
                       </button>
                     </div>
 
-                    <div style={{ textAlign: 'right', minWidth: '60px' }}>
+                    <div className="pos-cart-item-total" style={{ textAlign: 'right', minWidth: '60px' }}>
                       <span style={{ fontWeight: '700', fontSize: '0.88rem' }}>
                         {(item.product.price * item.quantity).toFixed(2)} FCFA
                       </span>
@@ -1356,9 +1648,38 @@ export const Storefront = () => {
                       <span style={{ fontSize: '0.68rem', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-secondary, rgba(255,255,255,0.6))', letterSpacing: '0.05em' }}>Items Ordered</span>
                       <div style={{ marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         {order.items?.map(item => (
-                          <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
-                            <span style={{ color: 'var(--text-primary, #ffffff)', textTransform: 'capitalize', fontWeight: '500', flex: 1 }}>{item.product_name || `Product #${item.product_id}`} × {item.quantity}</span>
-                            <span style={{ color: 'var(--text-secondary, rgba(255,255,255,0.75))', fontWeight: '600' }}>{(item.unit_price * item.quantity).toFixed(2)} FCFA</span>
+                          <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px', gap: '8px', fontSize: '0.8rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
+                              {/* Small image thumbnail in Worker Pending Online Orders list */}
+                              <div style={{
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: '4px',
+                                backgroundColor: 'rgba(255,255,255,0.02)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                overflow: 'hidden',
+                                border: '1px solid rgba(255,255,255,0.05)',
+                                flexShrink: 0
+                              }}>
+                                <img 
+                                  src={getProductImage(item.image_url, item.category, item.product_name)} 
+                                  alt={item.product_name} 
+                                  onError={(e) => { 
+                                    if (!e.currentTarget.dataset.error) {
+                                      e.currentTarget.dataset.error = 'true';
+                                      e.currentTarget.src = getSvgFallback(item.category, item.product_name);
+                                    }
+                                  }}
+                                  style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '1px' }} 
+                                />
+                              </div>
+                              <span style={{ color: 'var(--text-primary, #ffffff)', textTransform: 'capitalize', fontWeight: '500', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                                {item.product_name || `Product #${item.product_id}`} × {item.quantity}
+                              </span>
+                            </div>
+                            <span style={{ color: 'var(--text-secondary, rgba(255,255,255,0.75))', fontWeight: '600', flexShrink: 0 }}>{(item.unit_price * item.quantity).toFixed(2)} FCFA</span>
                           </div>
                         ))}
                       </div>
@@ -1465,6 +1786,124 @@ export const Storefront = () => {
       )}
       </div>
       {renderSimulatedMomoModal()}
+
+      {/* Guided Onboarding Walkthrough Tour Overlay & Bubble */}
+      {tourActive && highlightStyle && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 99999, pointerEvents: 'none' }}>
+          {/* Spotlight Mask */}
+          <div style={highlightStyle} />
+          
+          {/* Popover Bubble */}
+          <div style={{ ...getPopoverStyle(TOUR_STEPS[currentStepIdx]), pointerEvents: 'auto' }}>
+            {/* Step header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <span style={{ fontSize: '0.72rem', fontWeight: '800', color: 'var(--primary-color)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Step {currentStepIdx + 1} of {TOUR_STEPS.length}
+              </span>
+              <button
+                onClick={handleFinishTour}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  padding: '2px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '4px',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{ width: '14px', height: '14px' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Title & Description */}
+            <h4 style={{ fontSize: '0.92rem', fontWeight: '700', margin: '0 0 8px 0', color: 'var(--text-primary)' }}>
+              {TOUR_STEPS[currentStepIdx].title}
+            </h4>
+            <p style={{ fontSize: '0.82rem', lineHeight: '1.45', color: 'var(--text-secondary)', margin: '0 0 16px 0' }}>
+              {TOUR_STEPS[currentStepIdx].content}
+            </p>
+
+            {/* Navigation Actions */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+              <button
+                onClick={handleFinishTour}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  fontSize: '0.78rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  borderRadius: '6px',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+              >
+                Skip
+              </button>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {currentStepIdx > 0 && (
+                  <button
+                    onClick={() => setCurrentStepIdx(prev => prev - 1)}
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '6px',
+                      padding: '5px 10px',
+                      color: 'var(--text-primary)',
+                      fontSize: '0.78rem',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)'}
+                  >
+                    Back
+                  </button>
+                )}
+                
+                <button
+                  onClick={() => {
+                    if (currentStepIdx < TOUR_STEPS.length - 1) {
+                      setCurrentStepIdx(prev => prev + 1);
+                    } else {
+                      handleFinishTour();
+                    }
+                  }}
+                  style={{
+                    background: 'var(--primary-color)',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '5px 12px',
+                    color: '#ffffff',
+                    fontSize: '0.78rem',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    boxShadow: 'var(--shadow-md)',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.1)'}
+                  onMouseLeave={e => e.currentTarget.style.filter = 'none'}
+                >
+                  {currentStepIdx === TOUR_STEPS.length - 1 ? 'Finish' : 'Next'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

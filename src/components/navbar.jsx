@@ -6,7 +6,7 @@ import { useRole } from '../hooks/useRole';
 import { useSettings } from '../hooks/useSettings';
 
 export const Navbar = () => {
-  const { signOut, isBypass } = useAuth();
+  const { signOut, isBypass, clerkUser } = useAuth();
   const { isAdmin, role, user, isTechnician, isActualTechnician } = useRole();
   const { settings } = useSettings();
   const navigate = useNavigate();
@@ -284,9 +284,14 @@ export const Navbar = () => {
               fontSize: '1rem',
               fontWeight: 'bold',
               color: 'var(--accent-color)',
-              flexShrink: 0
+              flexShrink: 0,
+              overflow: 'hidden'
             }}>
-              {user?.name ? user.name[0].toUpperCase() : 'U'}
+              <img 
+                src={clerkUser?.imageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'Staff')}&background=4F46E5&color=fff&bold=true`} 
+                alt={user?.name || 'User Avatar'} 
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+              />
             </div>
             <div className="profile-details" style={{ overflow: 'hidden', flex: 1 }}>
               <h4 style={{
@@ -356,7 +361,7 @@ export const Navbar = () => {
               settings?.store_name ? settings.store_name[0].toUpperCase() : 'E'
             )}
           </div>
-          <h2 style={{ fontSize: '0.85rem', margin: 0, color: 'var(--text-primary)', fontWeight: '800' }}>
+          <h2 className="mobile-store-name" style={{ fontSize: '0.85rem', margin: 0, color: 'var(--text-primary)', fontWeight: '800' }}>
             {settings?.store_name || 'Smart Retail'}
           </h2>
         </div>
@@ -421,9 +426,14 @@ export const Navbar = () => {
             fontSize: '0.85rem',
             fontWeight: 'bold',
             color: 'var(--accent-color)',
-            flexShrink: 0
+            flexShrink: 0,
+            overflow: 'hidden'
           }} title={user?.name || 'User'}>
-            {user?.name ? user.name[0].toUpperCase() : 'U'}
+            <img 
+              src={clerkUser?.imageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'Staff')}&background=4F46E5&color=fff&bold=true`} 
+              alt={user?.name || 'User Avatar'} 
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+            />
           </div>
           
           <button
