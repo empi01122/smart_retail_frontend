@@ -3,7 +3,7 @@ import axios from 'axios';
 
 // Resolves the API base URL the same way api.js does (LAN-aware)
 const getPublicBase = () => {
-  const envUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+  const envUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
   try {
     const url = new URL(envUrl);
     if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {

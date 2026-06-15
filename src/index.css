@@ -288,6 +288,8 @@ label {
   backdrop-filter: blur(20px);
   border-radius: var(--radius-md) !important;
   box-shadow: var(--shadow-lg) !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
 }
 .cl-headerTitle {
   color: #ffffff !important;
