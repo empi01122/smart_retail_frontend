@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useAuth } from '../hooks/useAuth';
 import { useRole } from '../hooks/useRole';
 import { useSettings } from '../hooks/useSettings';
+import { getBaseURL } from '../services/api';
 
 export const Navbar = () => {
   const { signOut, isBypass, clerkUser } = useAuth();
@@ -18,7 +19,7 @@ export const Navbar = () => {
     localStorage.getItem('active_enterprise_id') || '1'
   );
 
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+  const API_BASE = getBaseURL();
 
   useEffect(() => {
     if (isActualTechnician) {
