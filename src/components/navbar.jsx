@@ -8,7 +8,7 @@ import { getBaseURL } from '../services/api';
 
 export const Navbar = () => {
   const { signOut, isBypass, clerkUser } = useAuth();
-  const { isAdmin, role, user, isTechnician, isActualTechnician } = useRole();
+  const { isAdmin, role, user, isTechnician, isActualTechnician, actualRole } = useRole();
   const { settings } = useSettings();
   const navigate = useNavigate();
 
@@ -233,9 +233,15 @@ export const Navbar = () => {
               outline: 'none'
             }}
           >
-            <option value="technician" style={{ backgroundColor: 'var(--bg-sidebar, #0f172a)', color: 'var(--text-primary, #ffffff)' }}>System Tech</option>
-            <option value="proprietor" style={{ backgroundColor: 'var(--bg-sidebar, #0f172a)', color: 'var(--text-primary, #ffffff)' }}>Store Owner (Proprietor)</option>
-            <option value="employee" style={{ backgroundColor: 'var(--bg-sidebar, #0f172a)', color: 'var(--text-primary, #ffffff)' }}>Cashier (Employee)</option>
+            {actualRole === 'technician' && (
+              <option value="technician" style={{ backgroundColor: 'var(--bg-sidebar, #0f172a)', color: 'var(--text-primary, #ffffff)' }}>System Tech</option>
+            )}
+            {(actualRole === 'technician' || actualRole === 'proprietor') && (
+              <option value="proprietor" style={{ backgroundColor: 'var(--bg-sidebar, #0f172a)', color: 'var(--text-primary, #ffffff)' }}>Store Owner (Proprietor)</option>
+            )}
+            {(actualRole === 'technician' || actualRole === 'proprietor' || actualRole === 'employee') && (
+              <option value="employee" style={{ backgroundColor: 'var(--bg-sidebar, #0f172a)', color: 'var(--text-primary, #ffffff)' }}>Cashier (Employee)</option>
+            )}
             <option value="buyer" style={{ backgroundColor: 'var(--bg-sidebar, #0f172a)', color: 'var(--text-primary, #ffffff)' }}>Buyer / Consumer</option>
           </select>
         </div>

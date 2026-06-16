@@ -11,7 +11,18 @@ export const useRole = () => {
   if (isAuthenticated) {
     const savedRole = localStorage.getItem('active_role');
     if (savedRole) {
-      role = (savedRole === 'admin' || savedRole === 'owner') ? 'proprietor' : savedRole;
+      const normalizedSaved = (savedRole === 'admin' || savedRole === 'owner') ? 'proprietor' : savedRole;
+      const allowed = 
+        actualRole === 'technician' ||
+        (actualRole === 'proprietor' && normalizedSaved !== 'technician') ||
+        (actualRole === 'employee' && normalizedSaved !== 'technician' && normalizedSaved !== 'proprietor') ||
+        (normalizedSaved === 'buyer');
+      
+      if (allowed) {
+        role = normalizedSaved;
+      } else {
+        localStorage.removeItem('active_role');
+      }
     }
   }
 

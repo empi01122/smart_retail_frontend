@@ -926,7 +926,7 @@ export const Dashboard = () => {
         <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
           
           {/* Left Side: Top Products List */}
-          <div style={{ flex: 1, minWidth: '300px' }}>
+          <div style={{ flex: 1, minWidth: 'min(300px, 100%)' }}>
             <Card
               title={
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
@@ -988,7 +988,7 @@ export const Dashboard = () => {
 
           {/* Middle Side: Predictive Stock Forecasting (Ultra Only) */}
           {tier === 'ultra' && (
-            <div style={{ flex: 1, minWidth: '300px' }}>
+            <div style={{ flex: 1, minWidth: 'min(300px, 100%)' }}>
               <Card
                 title={
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
@@ -1051,7 +1051,7 @@ export const Dashboard = () => {
           )}
 
           {/* Right Side: Gemini AI Business insights report */}
-          <div style={{ flex: 1.3, minWidth: '350px' }}>
+          <div style={{ flex: 1.3, minWidth: 'min(350px, 100%)' }}>
             <Card
               title={
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>

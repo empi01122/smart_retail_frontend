@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { getStoreSettings, updateStoreSettings, getThemes, applyTheme, getInspiration, upgradeEnterpriseSubscription } from '../services/settingsService';
 import { getStaff, syncStaff, deleteStaff } from '../services/staffService';
 import { useRole } from '../hooks/useRole';
 import { useSettings } from '../hooks/useSettings';
+import { getBaseURL } from '../services/api';
 import Card from '../components/card';
 import Button from '../components/button';
 import Table from '../components/table';
@@ -13,6 +15,7 @@ export const Settings = () => {
   const { isAdmin, isTechnician, isActualTechnician, user: loggedInUser } = useRole();
   const isSystemTech = isTechnician || isActualTechnician;
   const { settings: currentSettings, refreshSettings, applyThemeStyles } = useSettings();
+  const API_BASE = getBaseURL();
   
   // Tab states
   const [activeTab, setActiveTab] = useState('branding'); // 'branding' or 'staff'
@@ -52,10 +55,12 @@ export const Settings = () => {
   const isStaffDisabled = !isAdmin || (!isSystemTech && ((subTier === 'free' && staffCount >= 1) || (subTier === 'pro' && staffCount >= 2)));
 
   const [staffLoading, setStaffLoading] = useState(false);
+  const [enterprisesList, setEnterprisesList] = useState([]);
   const [addStaffForm, setAddStaffForm] = useState({
     name: '',
     email: '',
-    role: 'employee'
+    role: 'employee',
+    enterprise_id: ''
   });
   const [addStaffLoading, setAddStaffLoading] = useState(false);
 
@@ -121,6 +126,23 @@ export const Settings = () => {
       fetchStaff();
     }
   }, [activeTab, isAdmin]);
+
+  // Load enterprises (System Tech Only)
+  useEffect(() => {
+    if (isSystemTech && activeTab === 'staff') {
+      axios.get(`${API_BASE}/enterprises/`)
+        .then(res => {
+          setEnterprisesList(res.data || []);
+          setAddStaffForm(prev => {
+            if (!prev.enterprise_id && res.data.length > 0) {
+              return { ...prev, enterprise_id: res.data[0].id.toString() };
+            }
+            return prev;
+          });
+        })
+        .catch(err => console.error('Error fetching enterprises in settings:', err));
+    }
+  }, [isSystemTech, activeTab, API_BASE]);
 
   // Branding updates
   const handleBrandingChange = (e) => {
@@ -297,6 +319,10 @@ export const Settings = () => {
       alert('Please fill out Name and Email.');
       return;
     }
+    if (isSystemTech && !addStaffForm.enterprise_id) {
+      alert('Please select an Enterprise.');
+      return;
+    }
 
     setAddStaffLoading(true);
     try {
@@ -308,8 +334,17 @@ export const Settings = () => {
         created_by_id: loggedInUser?.id || null
       };
 
+      if (isSystemTech && addStaffForm.enterprise_id) {
+        payload.enterprise_id = parseInt(addStaffForm.enterprise_id);
+      }
+
       await syncStaff(payload);
-      setAddStaffForm({ name: '', email: '', role: 'employee' });
+      setAddStaffForm(prev => ({
+        name: '',
+        email: '',
+        role: 'employee',
+        enterprise_id: prev.enterprise_id
+      }));
       alert('Staff pre-authorization successful! The employee can now register/sign-in using this email address.');
       await fetchStaff();
     } catch (error) {
@@ -415,7 +450,7 @@ export const Settings = () => {
         <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }} className="animate-fade-in">
           
           {/* Custom Theme configuration form */}
-          <div style={{ flex: 1.2, minWidth: '320px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ flex: 1.2, minWidth: 'min(320px, 100%)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <Card title="Custom Colors & Identity" subtitle="Define custom colors matching your exact corporate signature.">
               {subTier === 'free' && (
                 <div style={{
@@ -741,7 +776,7 @@ export const Settings = () => {
           </div>
 
           {/* Right Side: My Subscription & Inspiration links */}
-          <div style={{ flex: 0.8, minWidth: '280px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ flex: 0.8, minWidth: 'min(280px, 100%)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <Card title="My Subscription" subtitle="Manage your retail store plan.">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -876,7 +911,7 @@ export const Settings = () => {
         <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }} className="animate-fade-in">
           
           {/* Add Staff form */}
-          <div style={{ flex: 0.9, minWidth: '300px' }}>
+          <div style={{ flex: 0.9, minWidth: 'min(300px, 100%)' }}>
             <Card title="Pre-Authorize Employee Profile" subtitle="Pre-authorize email addresses for secure login.">
               {subTier === 'free' && staffCount >= 1 && (
                 <div style={{
@@ -936,6 +971,25 @@ export const Settings = () => {
                   />
                 </div>
 
+                {isSystemTech && (
+                  <div>
+                    <label htmlFor="staff-enterprise">Enterprise Scope</label>
+                    <select
+                      id="staff-form-enterprise"
+                      name="enterprise_id"
+                      value={addStaffForm.enterprise_id}
+                      onChange={handleAddStaffChange}
+                      disabled={isStaffDisabled}
+                      required
+                    >
+                      <option value="">-- Select Enterprise --</option>
+                      {enterprisesList.map(ent => (
+                        <option key={ent.id} value={ent.id}>{ent.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 <div>
                   <label htmlFor="staff-role">Role Permissions</label>
                   <select
@@ -966,7 +1020,7 @@ export const Settings = () => {
           </div>
 
           {/* Staff List Table */}
-          <div style={{ flex: 1.3, minWidth: '350px' }}>
+          <div style={{ flex: 1.3, minWidth: 'min(350px, 100%)' }}>
             <Card title="Authorized Staff Members" subtitle="Profiles linked and pre-authorized to access this terminal.">
               <Table
                 headers={['Profile Details', 'Role', 'Status', 'Actions']}

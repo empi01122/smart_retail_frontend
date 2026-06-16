@@ -7,15 +7,17 @@ import Button from '../components/button';
 import { WrenchIcon } from '../components/icons';
 
 export const Login = () => {
-  const { isAuthenticated, loginBypass, loading, clerkUser, signOut, hasNoAccess } = useAuth();
+  const { isAuthenticated, loading, clerkUser, signOut, hasNoAccess } = useAuth();
   const { settings } = useSettings();
   const clerkAuth = useClerkAuth();
   const navigate = useNavigate();
 
-  const handleDevBypass = () => {
-    loginBypass();
-    navigate('/storefront');
-  };
+  // Redirect to storefront automatically once authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/storefront', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   return (
     <div className="login-container" style={{

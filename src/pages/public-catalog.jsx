@@ -360,81 +360,7 @@ export const PublicCatalog = () => {
     }
   };
 
-  const renderTechConsole = () => (
-    <div style={{
-      backgroundColor: '#1e293b',
-      borderBottom: '2px solid #ef4444',
-      padding: '10px 20px',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      fontSize: '0.85rem',
-      color: '#ffffff',
-      position: 'sticky',
-      top: 0,
-      zIndex: 9999,
-      boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-      fontFamily: 'Inter, system-ui, sans-serif'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#ef4444', fontWeight: '800' }}>
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{ width: '15px', height: '15px' }}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A1.875 1.875 0 1020 18.25l-5.83-5.83M11.42 15.17a3 3 0 11-4.24-4.24 3 3 0 014.24 4.24z" />
-          </svg>
-          TECHNICIAN CONSOLE
-        </span>
-        <span style={{ color: 'rgba(255,255,255,0.4)' }}>|</span>
-        <span>Viewing as: <strong>Buyer / Consumer</strong></span>
-      </div>
-      <div style={{ display: 'flex', gap: '10px' }}>
-        <button
-          onClick={() => handleRoleChange('technician')}
-          style={{
-            padding: '6px 12px',
-            borderRadius: '6px',
-            border: 'none',
-            backgroundColor: 'var(--primary-color, #4F46E5)',
-            color: '#fff',
-            fontWeight: '700',
-            cursor: 'pointer',
-            fontSize: '0.78rem'
-          }}
-        >
-          Tech View
-        </button>
-        <button
-          onClick={() => handleRoleChange('proprietor')}
-          style={{
-            padding: '6px 12px',
-            borderRadius: '6px',
-            border: '1px solid rgba(255,255,255,0.15)',
-            backgroundColor: 'rgba(255,255,255,0.05)',
-            color: '#fff',
-            fontWeight: '600',
-            cursor: 'pointer',
-            fontSize: '0.78rem'
-          }}
-        >
-          Owner View
-        </button>
-        <button
-          onClick={() => handleRoleChange('employee')}
-          style={{
-            padding: '6px 12px',
-            borderRadius: '6px',
-            border: '1px solid rgba(255,255,255,0.15)',
-            backgroundColor: 'rgba(255,255,255,0.05)',
-            color: '#fff',
-            fontWeight: '600',
-            cursor: 'pointer',
-            fontSize: '0.78rem'
-          }}
-        >
-          Cashier View
-        </button>
-      </div>
-    </div>
-  );
+  const renderTechConsole = () => null;
 
   const [enterprises, setEnterprises] = useState([]);
   const [selectedEntId, setSelectedEntId] = useState(null);
@@ -1681,88 +1607,84 @@ export const PublicCatalog = () => {
   // ─── Print receipt ─────────────────────────────────────────────
   const handlePrintReceipt = () => {
     if (!completedOrder) return;
-    const printWindow = window.open('', '_blank', 'width=450,height=750');
-    if (!printWindow) { alert('Please allow popups to print the receipt.'); return; }
+    let container = document.getElementById('printable-receipt-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'printable-receipt-container';
+      document.body.appendChild(container);
+    }
 
     const itemsHtml = completedOrder.items?.map(item => `
-      <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:0.88rem;">
-        <span>${titleCase(item.product_name) || ('Product #' + item.product_id)} (x${item.quantity})</span>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.9rem; color: #000;">
+        <span>${titleCase(item.product_name) || ('Product #' + item.product_id)} (${item.quantity})</span>
         <span>${(item.unit_price * item.quantity).toFixed(2)} FCFA</span>
       </div>
     `).join('') || '';
 
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Delivery Receipt ${completedOrder.receipt_number || ('#' + completedOrder.id)}</title>
-          <style>
-            @media print { body { margin:0; padding:10px; } }
-            body { font-family:'Courier New',Courier,monospace; padding:20px; color:#1e293b; background:#fff; width:320px; margin:0 auto; }
-            .center { text-align:center; }
-            .bold { font-weight:bold; }
-            .dashed { border-top:1px dashed #94a3b8; margin:12px 0; }
-            .section-label { font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; color:#64748b; margin-bottom:6px; }
-            .row { display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px; }
-            .total-row { display:flex; justify-content:space-between; font-weight:bold; font-size:1.05rem; margin-top:10px; }
-            .pin-box { border:2px dashed #d97706; padding:14px; margin:16px 0; text-align:center; background:#fef3c7; border-radius:4px; }
-            .pin-val { font-size:2rem; font-weight:900; letter-spacing:0.18em; margin-top:8px; color:#b45309; }
-            .warn { font-size:0.72rem; color:#92400e; margin-top:6px; line-height:1.4; }
-          </style>
-        </head>
-        <body>
-          <div class="center">
-            <h2 style="margin:0 0 2px 0;font-size:1.2rem;font-weight:800;">${selectedEnt?.name?.toUpperCase() || 'SMART RETAIL'}</h2>
-            <p style="margin:0;font-size:0.72rem;text-transform:uppercase;color:#64748b;">Online Delivery Receipt</p>
-          </div>
+    container.innerHTML = `
+      <div style="text-align: center; margin-bottom: 20px;">
+        <h2 style="margin: 0 0 4px 0; font-size: 1.2rem; font-weight: 800; color: #000;">
+          ${selectedEnt?.name ? selectedEnt.name.toUpperCase() : 'SMART RETAIL'}
+        </h2>
+        <p style="margin: 0; font-size: 0.75rem; text-transform: uppercase; color: #64748b;">
+          Online Delivery Receipt
+        </p>
+      </div>
+      
+      <div style="border-top: 1px dashed #000; margin: 12px 0;"></div>
+      
+      <p style="margin: 0 0 6px 0; font-size: 0.85rem; color: #000;"><strong>RECEIPT ID:</strong> ${completedOrder.receipt_number || ('#' + completedOrder.id)}</p>
+      <p style="margin: 0 0 6px 0; font-size: 0.85rem; color: #000;"><strong>DATE:</strong> ${new Date(completedOrder.created_at).toLocaleString()}</p>
+      <p style="margin: 0 0 12px 0; font-size: 0.85rem; color: #000;"><strong>PAYMENT:</strong> Mobile Money (MoMo)</p>
+      
+      <div style="border-top: 1px dashed #000; margin: 12px 0;"></div>
+      
+      <p style="margin: 0 0 4px 0; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #64748b;">Delivery Details</p>
+      <p style="margin: 0 0 4px 0; font-size: 0.85rem; color: #000;"><strong>NAME:</strong> ${completedOrder.customer_name || '—'}</p>
+      <p style="margin: 0 0 4px 0; font-size: 0.85rem; color: #000;"><strong>PHONE:</strong> ${completedOrder.customer_phone || '—'}</p>
+      <p style="margin: 0 0 4px 0; font-size: 0.85rem; color: #000;"><strong>ADDRESS:</strong> ${completedOrder.delivery_address || '—'}</p>
+      ${completedOrder.order_note ? `<p style="margin: 4px 0 0 0; font-size: 0.82rem; font-style: italic; color: #475569;">"${completedOrder.order_note}"</p>` : ''}
 
-          <div class="dashed"></div>
+      <div style="border-top: 1px dashed #000; margin: 12px 0;"></div>
+      
+      <div style="margin: 12px 0; color: #000;">
+        ${itemsHtml}
+      </div>
+      
+      <div style="border-top: 1px dashed #000; margin: 12px 0;"></div>
+      
+      <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 1.05rem; margin-top: 10px; color: #000;">
+        <span>TOTAL PAID</span>
+        <span>${completedOrder.total_amount.toFixed(2)} FCFA</span>
+      </div>
+      
+      <div style="border: 2px dashed #b45309; padding: 12px; margin: 16px 0; text-align: center; background-color: #fef3c7; border-radius: 4px; color: #000;">
+        <span style="font-weight: bold; font-size: 0.82rem; color: #b45309; display: block; text-transform: uppercase;">Delivery Verification PIN</span>
+        <p style="margin: 4px 0 8px 0; font-size: 0.74rem; color: #78350f; line-height: 1.3;">
+          When the rider arrives, <strong>write this PIN in their delivery book</strong> and sign next to it. Do not say it aloud.
+        </p>
+        <div style="font-size: 1.5rem; font-weight: 800; letter-spacing: 0.12em; margin-top: 6px; color: #b45309;">${completedOrder.delivery_pin}</div>
+        <p style="font-size: 0.7rem; color: #92400e; margin-top: 6px; line-height: 1.3;">This PIN releases your escrow. Only write it after you receive your items.</p>
+      </div>
+      
+      <div style="border-top: 1px dashed #000; margin: 12px 0;"></div>
+      
+      <p style="margin-top: 30px; font-size: 0.8rem; color: #64748b; text-align: center;">Thank you for your order!<br/>Your items will arrive soon.</p>
+    `;
 
-          <p class="section-label">Order Info</p>
-          <div class="row"><span><b>RECEIPT ID:</b></span><span>${completedOrder.receipt_number || ('#' + completedOrder.id)}</span></div>
-          <div class="row"><span><b>DATE:</b></span><span>${new Date(completedOrder.created_at).toLocaleString()}</span></div>
-          <div class="row"><span><b>PAYMENT:</b></span><span>Mobile Money (MoMo)</span></div>
+    document.body.classList.add('is-printing-receipt');
 
-          <div class="dashed"></div>
+    const cleanUp = () => {
+      document.body.classList.remove('is-printing-receipt');
+      if (container && container.parentNode) {
+        container.parentNode.removeChild(container);
+      }
+    };
 
-          <p class="section-label">Delivery Details</p>
-          <div class="row"><span><b>NAME:</b></span><span>${completedOrder.customer_name || '—'}</span></div>
-          <div class="row"><span><b>PHONE:</b></span><span>${completedOrder.customer_phone || '—'}</span></div>
-          <div class="row"><span><b>ADDRESS:</b></span></div>
-          <div style="font-size:0.85rem;margin-bottom:4px;padding-left:4px;">${completedOrder.delivery_address || '—'}</div>
-          ${completedOrder.order_note ? `<div class="row"><span><b>NOTE:</b></span></div><div style="font-size:0.82rem;font-style:italic;padding-left:4px;color:#475569;">"${completedOrder.order_note}"</div>` : ''}
-
-          <div class="dashed"></div>
-
-          <p class="section-label">Items Ordered</p>
-          <div style="margin:10px 0;">${itemsHtml}</div>
-
-          <div class="dashed"></div>
-
-          <div class="total-row">
-            <span>TOTAL PAID</span>
-            <span>${completedOrder.total_amount.toFixed(2)} FCFA</span>
-          </div>
-
-          <div class="pin-box">
-            <span class="bold" style="font-size:0.82rem;color:#b45309;display:block;text-transform:uppercase;">Delivery Verification PIN</span>
-            <p style="margin:6px 0 4px 0;font-size:0.76rem;color:#78350f;line-height:1.35;">
-              When the rider arrives, <b>write this PIN in their delivery book</b> and sign next to it. Do not say it aloud.
-            </p>
-            <div class="pin-val">${completedOrder.delivery_pin}</div>
-            <p class="warn">This PIN releases your escrow. Only write it after you receive your items.</p>
-          </div>
-
-          <div class="dashed"></div>
-
-          <p class="center" style="margin-top:20px;font-size:0.78rem;color:#64748b;">Thank you for your order!<br/>Your items will arrive soon.</p>
-
-          <script>
-            window.onload = function() { window.print(); setTimeout(function() { window.close(); }, 600); }
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+    setTimeout(() => {
+      window.print();
+      setTimeout(cleanUp, 1000);
+    }, 100);
   };
 
   // ─── Filtered products ─────────────────────────────────────────
@@ -1885,43 +1807,7 @@ export const PublicCatalog = () => {
               </button>
             </div>
 
-            {completedOrder.payment_status === 'paid_escrow' && (
-              <div style={{ marginTop: '16px' }}>
-                <button
-                  onClick={() => {
-                    setDisputeTarget(completedOrder);
-                    setShowDisputeModal(true);
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    borderRadius: '10px',
-                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                    backgroundColor: 'rgba(239, 68, 68, 0.08)',
-                    color: '#ef4444',
-                    fontWeight: '700',
-                    cursor: 'pointer',
-                    fontSize: '0.86rem',
-                    transition: 'all 0.2s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px'
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
-                    e.currentTarget.style.transform = 'translateY(-1px)';
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
-                >
-                  <WarningIcon size={14} style={{ color: '#ef4444' }} />
-                  Dispute Delivery / Freeze Payment
-                </button>
-              </div>
-            )}
+
             
             {completedOrder.payment_status === 'disputed' && (
               <div style={{ marginTop: '16px', padding: '12px', borderRadius: '10px', backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', fontSize: '0.8rem', fontWeight: '700', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
@@ -2088,7 +1974,34 @@ export const PublicCatalog = () => {
       if (file) {
         const reader = new FileReader();
         reader.onloadend = () => {
-          setDisputePic(reader.result);
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 600;
+            const MAX_HEIGHT = 600;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width *= MAX_HEIGHT / height;
+                height = MAX_HEIGHT;
+              }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+            setDisputePic(compressedDataUrl);
+          };
+          img.src = reader.result;
         };
         reader.readAsDataURL(file);
       }

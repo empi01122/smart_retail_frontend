@@ -292,7 +292,7 @@ export const Sales = () => {
                         flexWrap: 'wrap',
                       }}>
                         {/* Left Side: Basket Items */}
-                        <div style={{ flex: 1.2, minWidth: '300px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div style={{ flex: 1.2, minWidth: 'min(300px, 100%)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                           <h4 style={{ fontSize: '0.85rem', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
                             Basket breakdown:
                           </h4>
@@ -364,7 +364,7 @@ export const Sales = () => {
                             )}
                           </div>
                         </div>
-                        <div style={{ flex: 0.8, minWidth: '280px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div style={{ flex: 0.8, minWidth: 'min(280px, 100%)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                           {sale.payment_method === 'mobile_money' ? (
                             <>
                               <h4 style={{ fontSize: '0.85rem', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
