@@ -12,33 +12,10 @@ export const Login = () => {
   const clerkAuth = useClerkAuth();
   const navigate = useNavigate();
 
-  // Redirect to storefront automatically once authenticated
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/storefront');
-    }
-  }, [isAuthenticated, navigate]);
-
   const handleDevBypass = () => {
     loginBypass();
     navigate('/storefront');
   };
-
-  // Only show full-page loading spinner if we are authenticated and loading the profile
-  if (loading && isAuthenticated) {
-    return (
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        backgroundColor: '#05070c',
-        color: '#ffffff'
-      }}>
-        <div style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--primary-color)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-      </div>
-    );
-  }
 
   return (
     <div className="login-container" style={{
@@ -161,28 +138,7 @@ export const Login = () => {
         <div style={{ width: '100%', maxWidth: '400px' }}>
           {/* Clerk Login Interface wrapper */}
           <div style={{ marginBottom: '24px', minHeight: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {isAuthenticated ? (
-              <div style={{ textAlign: 'center' }}>
-                <style>{`
-                  @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                  }
-                `}</style>
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  border: '3px solid rgba(255,255,255,0.1)',
-                  borderTopColor: 'var(--primary-color)',
-                  borderRadius: '50%',
-                  animation: 'spin 1s linear infinite',
-                  margin: '0 auto 12px auto'
-                }} />
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                  Redirecting to console...
-                </p>
-              </div>
-            ) : hasNoAccess ? (
+            {hasNoAccess ? (
               <div style={{
                 textAlign: 'center',
                 background: 'rgba(239, 68, 68, 0.05)',

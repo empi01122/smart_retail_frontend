@@ -266,73 +266,71 @@ export const Storefront = () => {
   };
 
   const handlePrintDispatchReceipt = (order) => {
-    const printWindow = window.open('', '_blank', 'width=450,height=750');
-    if (!printWindow) { alert('Please allow popups to print.'); return; }
+    let container = document.getElementById('printable-receipt-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'printable-receipt-container';
+      document.body.appendChild(container);
+    }
     
     const itemsHtml = order.items?.map(item => `
-      <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:0.88rem;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:0.88rem;color:#000;">
         <span>${titleCase(item.product_name) || ('Product #' + item.product_id)} (x${item.quantity})</span>
         <span>${(item.unit_price * item.quantity).toFixed(2)} FCFA</span>
       </div>
     `).join('') || '';
 
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Dispatch Invoice #${order.id}</title>
-          <style>
-            @media print { body { margin:0; padding:10px; } }
-            body { font-family:'Courier New',Courier,monospace; padding:20px; color:#1e293b; background:#fff; width:320px; margin:0 auto; }
-            .center { text-align:center; }
-            .dashed { border-top:1px dashed #94a3b8; margin:12px 0; }
-            .section-label { font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; color:#64748b; margin-bottom:6px; }
-            .row { display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px; }
-            .total-row { display:flex; justify-content:space-between; font-weight:bold; font-size:1.05rem; margin-top:10px; }
-            .secure-info { border:2px dashed #b45309; padding:12px; margin:16px 0; text-align:center; background:#fffbeb; border-radius:4px; font-size:0.76rem; color:#78350f; font-weight:bold; }
-          </style>
-        </head>
-        <body>
-          <div class="center">
-            <h2 style="margin:0 0 2px 0;font-size:1.2rem;font-weight:800;">${settings?.store_name || 'SMART RETAIL'}</h2>
-            <p style="margin:0;font-size:0.7rem;color:#64748b;text-transform:uppercase;">Rider Dispatch Bill</p>
-          </div>
-          <div class="dashed"></div>
-          <div class="section-label">Order Details</div>
-          <div class="row"><span><b>Invoice No:</b></span><span>${order.receipt_number || ('#' + order.id)}</span></div>
-          <div class="row"><span><b>Date:</b></span><span>${new Date(order.created_at).toLocaleString()}</span></div>
-          <div class="row"><span><b>Payment:</b></span><span>Mobile Money</span></div>
-          <div class="dashed"></div>
-          <div class="section-label">Delivery Destination</div>
-          <div class="row"><span><b>Recipient:</b></span><span>${order.customer_name}</span></div>
-          <div class="row"><span><b>Phone:</b></span><span>${order.customer_phone}</span></div>
-          <div style="font-size:0.85rem;margin-top:4px;"><b>Address:</b> ${order.delivery_address}</div>
-          ${order.order_note ? `<div style="font-size:0.85rem;margin-top:4px;font-style:italic;"><b>Note:</b> "${order.order_note}"</div>` : ''}
-          <div class="dashed"></div>
-          <div class="section-label">Items Dispatched</div>
-          ${itemsHtml}
-          <div class="dashed"></div>
-          <div class="total-row">
-            <span>TOTAL AMOUNT</span>
-            <span>${order.total_amount.toLocaleString()} FCFA</span>
-          </div>
-          <div class="secure-info">
-            <div style="display:flex;align-items:center;gap:6px;font-weight:bold;margin-bottom:6px;color:#0f172a;">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;display:inline-block;vertical-align:middle;flex-shrink:0;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-              <span>CUSTOMER SECURE PIN CHECK</span>
-            </div>
-            PIN Code is hidden from cashier/rider. Collect the 4-digit verification code from customer delivery book to claim funds.
-          </div>
-          <div class="dashed"></div>
-          <div class="center" style="font-size:0.75rem;color:#64748b;margin-top:20px;">
-            Thank you for shopping with us!
-          </div>
-          <script>
-            window.onload = function() { window.print(); setTimeout(function() { window.close(); }, 600); }
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+    container.innerHTML = `
+      <div style="text-align:center;">
+        <h2 style="margin:0 0 2px 0;font-size:1.2rem;font-weight:800;color:#000;">${settings?.store_name || 'SMART RETAIL'}</h2>
+        <p style="margin:0;font-size:0.7rem;color:#64748b;text-transform:uppercase;">Rider Dispatch Bill</p>
+      </div>
+      <div style="border-top:1px dashed #000; margin:12px 0;"></div>
+      <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; color:#64748b; margin-bottom:6px;">Order Details</div>
+      <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px; color:#000;"><span><b>Invoice No:</b></span><span>${order.receipt_number || ('#' + order.id)}</span></div>
+      <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px; color:#000;"><span><b>Date:</b></span><span>${new Date(order.created_at).toLocaleString()}</span></div>
+      <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px; color:#000;"><span><b>Payment:</b></span><span>Mobile Money</span></div>
+      <div style="border-top:1px dashed #000; margin:12px 0;"></div>
+      <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; color:#64748b; margin-bottom:6px;">Delivery Destination</div>
+      <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px; color:#000;"><span><b>Recipient:</b></span><span>${order.customer_name}</span></div>
+      <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px; color:#000;"><span><b>Phone:</b></span><span>${order.customer_phone}</span></div>
+      <div style="font-size:0.85rem;margin-top:4px;color:#000;"><b>Address:</b> ${order.delivery_address}</div>
+      ${order.order_note ? `<div style="font-size:0.85rem;margin-top:4px;font-style:italic;color:#000;"><b>Note:</b> "${order.order_note}"</div>` : ''}
+      <div style="border-top:1px dashed #000; margin:12px 0;"></div>
+      <div style="font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; color:#64748b; margin-bottom:6px;">Items Dispatched</div>
+      <div style="color:#000;">
+        ${itemsHtml}
+      </div>
+      <div style="border-top:1px dashed #000; margin:12px 0;"></div>
+      <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.05rem; margin-top:10px; color:#000;">
+        <span>TOTAL AMOUNT</span>
+        <span>${order.total_amount.toLocaleString()} FCFA</span>
+      </div>
+      <div style="border:2px dashed #b45309; padding:12px; margin:16px 0; text-align:center; background:#fffbeb; border-radius:4px; font-size:0.76rem; color:#78350f; font-weight:bold;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:6px;font-weight:bold;margin-bottom:6px;color:#78350f;">
+          🔒 <span>CUSTOMER SECURE PIN CHECK</span>
+        </div>
+        PIN Code is hidden from cashier/rider. Collect the 4-digit verification code from customer delivery book to claim funds.
+      </div>
+      <div style="border-top:1px dashed #000; margin:12px 0;"></div>
+      <div style="font-size:0.75rem;color:#64748b;margin-top:20px;text-align:center;">
+        Thank you for shopping with us!
+      </div>
+    `;
+
+    document.body.classList.add('is-printing-receipt');
+
+    const cleanUp = () => {
+      document.body.classList.remove('is-printing-receipt');
+      if (container && container.parentNode) {
+        container.parentNode.removeChild(container);
+      }
+    };
+
+    setTimeout(() => {
+      window.print();
+      setTimeout(cleanUp, 1000);
+    }, 100);
   };
   const prevOrderIdsRef = useRef(new Set());
   const timerRef = useRef(null);
@@ -803,102 +801,75 @@ export const Storefront = () => {
 
   const handlePrintReceipt = () => {
     if (!receipt) return;
-    const printWindow = window.open('', '_blank', 'width=450,height=650');
-    if (!printWindow) {
-      alert("Please allow popups to print/download the receipt.");
-      return;
+    let container = document.getElementById('printable-receipt-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'printable-receipt-container';
+      document.body.appendChild(container);
     }
+    
     const itemsHtml = receipt.items?.map(item => `
-      <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.9rem;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.9rem; color: #000;">
         <span>${titleCase(item.product_name) || ('Product #' + item.product_id)} (${item.quantity})</span>
         <span>${(item.unit_price * item.quantity).toFixed(2)} FCFA</span>
       </div>
     `).join('') || '';
 
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Receipt ${receipt.receipt_number || ('#' + receipt.id)}</title>
-          <style>
-            @media print {
-              body { margin: 0; padding: 10px; }
-            }
-            body {
-              font-family: 'Courier New', Courier, monospace;
-              padding: 20px;
-              color: #1e293b;
-              background-color: #ffffff;
-              width: 320px;
-              margin: 0 auto;
-            }
-            .center { text-align: center; }
-            .bold { font-weight: bold; }
-            .dashed-line { border-top: 1px dashed #94a3b8; margin: 12px 0; }
-            .total-row { display: flex; justify-content: space-between; font-weight: bold; font-size: 1.05rem; margin-top: 10px; }
-            .pin-box {
-              border: 1px dashed #d97706;
-              padding: 12px;
-              margin: 16px 0;
-              text-align: center;
-              background-color: #fef3c7;
-              border-radius: 4px;
-            }
-            .pin-val {
-              font-size: 1.5rem;
-              font-weight: 800;
-              letter-spacing: 0.12em;
-              margin-top: 6px;
-              color: #b45309;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="center">
-            <h2 style="margin: 0 0 4px 0; font-size: 1.2rem; font-weight: 800;">${settings?.store_name ? settings.store_name.toUpperCase() : 'SMART RETAIL'}</h2>
-            <p style="margin: 0; font-size: 0.75rem; text-transform: uppercase; color: #64748b;">Transaction Receipt</p>
-          </div>
-          
-          <div class="dashed-line"></div>
-          
-          <p style="margin: 0 0 6px 0; font-size: 0.85rem;"><strong>RECEIPT ID:</strong> ${receipt.receipt_number || ('#' + receipt.id)}</p>
-          <p style="margin: 0 0 6px 0; font-size: 0.85rem;"><strong>DATE:</strong> ${new Date(receipt.created_at).toLocaleString()}</p>
-          <p style="margin: 0 0 12px 0; font-size: 0.85rem;"><strong>PAYMENT:</strong> ${receipt.payment_method === 'mobile_money' ? 'Mobile Money' : 'Cash'}</p>
-          
-          <div class="dashed-line"></div>
-          
-          <div style="margin: 12px 0;">
-            ${itemsHtml}
-          </div>
-          
-          <div class="dashed-line"></div>
-          
-          <div class="total-row">
-            <span>TOTAL AMOUNT</span>
-            <span>${receipt.total_amount.toFixed(2)} FCFA</span>
-          </div>
-          
-          ${receipt.payment_status === "paid_escrow" ? `
-            <div class="pin-box">
-              <span class="bold" style="font-size: 0.82rem; color: #b45309; display: block; text-transform: uppercase;">Secure Payment Enabled</span>
-              <p style="margin: 4px 0 8px 0; font-size: 0.74rem; color: #78350f; line-height: 1.3;">Share this PIN with delivery staff only after receiving items:</p>
-              <div class="pin-val">${receipt.delivery_pin}</div>
-            </div>
-          ` : ''}
-          
-          <div class="dashed-line"></div>
-          
-          <p class="center" style="margin-top: 30px; font-size: 0.8rem; color: #64748b;">Thank you for shopping with us!</p>
-          
-          <script>
-            window.onload = function() {
-              window.print();
-              setTimeout(function() { window.close(); }, 500);
-            }
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+    container.innerHTML = `
+      <div style="text-align: center; margin-bottom: 20px;">
+        <h2 style="margin: 0 0 4px 0; font-size: 1.2rem; font-weight: 800; color: #000;">
+          ${settings?.store_name ? settings.store_name.toUpperCase() : 'SMART RETAIL'}
+        </h2>
+        <p style="margin: 0; font-size: 0.75rem; text-transform: uppercase; color: #64748b;">
+          Transaction Receipt
+        </p>
+      </div>
+      
+      <div style="border-top: 1px dashed #000; margin: 12px 0;"></div>
+      
+      <p style="margin: 0 0 6px 0; font-size: 0.85rem; color: #000;"><strong>RECEIPT ID:</strong> ${receipt.receipt_number || ('#' + receipt.id)}</p>
+      <p style="margin: 0 0 6px 0; font-size: 0.85rem; color: #000;"><strong>DATE:</strong> ${new Date(receipt.created_at).toLocaleString()}</p>
+      <p style="margin: 0 0 12px 0; font-size: 0.85rem; color: #000;"><strong>PAYMENT:</strong> ${receipt.payment_method === 'mobile_money' ? 'Mobile Money' : 'Cash'}</p>
+      
+      <div style="border-top: 1px dashed #000; margin: 12px 0;"></div>
+      
+      <div style="margin: 12px 0; color: #000;">
+        ${itemsHtml}
+      </div>
+      
+      <div style="border-top: 1px dashed #000; margin: 12px 0;"></div>
+      
+      <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 1.05rem; margin-top: 10px; color: #000;">
+        <span>TOTAL AMOUNT</span>
+        <span>${receipt.total_amount.toFixed(2)} FCFA</span>
+      </div>
+      
+      ${receipt.payment_status === "paid_escrow" ? `
+        <div style="border: 2px dashed #b45309; padding: 12px; margin: 16px 0; text-align: center; background-color: #fef3c7; border-radius: 4px;">
+          <span style="font-weight: bold; font-size: 0.82rem; color: #b45309; display: block; text-transform: uppercase;">Secure Payment Enabled</span>
+          <p style="margin: 4px 0 8px 0; font-size: 0.74rem; color: #78350f; line-height: 1.3;">Share this PIN with delivery staff only after receiving items:</p>
+          <div style="font-size: 1.5rem; font-weight: 800; letter-spacing: 0.12em; margin-top: 6px; color: #b45309;">${receipt.delivery_pin}</div>
+        </div>
+      ` : ''}
+      
+      <div style="border-top: 1px dashed #000; margin: 12px 0;"></div>
+      
+      <p style="margin-top: 30px; font-size: 0.8rem; color: #64748b; text-align: center;">Thank you for shopping with us!</p>
+    `;
+
+    document.body.classList.add('is-printing-receipt');
+
+    const cleanUp = () => {
+      document.body.classList.remove('is-printing-receipt');
+      if (container && container.parentNode) {
+        container.parentNode.removeChild(container);
+      }
+    };
+
+    setTimeout(() => {
+      window.print();
+      setTimeout(cleanUp, 1000);
+    }, 100);
   };
 
   return (

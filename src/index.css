@@ -867,4 +867,28 @@ label {
   display: none !important;
 }
 
+/* Print overrides for popup-free printing and PDF downloading on mobile & desktop */
+@media print {
+  body.is-printing-receipt > :not(#printable-receipt-container) {
+    display: none !important;
+  }
+  body.is-printing-receipt #printable-receipt-container {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 20px;
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-family: 'Courier New', Courier, monospace;
+    box-shadow: none !important;
+  }
+}
+
+#printable-receipt-container {
+  display: none;
+}
+
 
