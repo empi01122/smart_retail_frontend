@@ -641,19 +641,23 @@ label {
 
 @media (max-width: 640px) {
   .pos-layout-container {
-    height: calc(100vh - 130px) !important; /* account for top + bottom nav */
-    max-height: calc(100vh - 130px) !important;
+    height: auto !important;
+    max-height: calc(100vh - 140px) !important; /* account for top + bottom nav */
+  }
+  .pos-product-desc {
+    display: none !important; /* hide description on mobile to keep grid compact */
   }
 }
 
 /* Responsive adjustments for very small screens (native mobile look) */
 @media (max-width: 480px) {
-  .mobile-nav-link span:last-child {
-    display: none !important;
-  }
   .mobile-nav-link {
-    max-width: 60px !important;
-    padding: 6px !important;
+    max-width: 72px !important;
+    padding: 6px 4px !important;
+  }
+  .mobile-nav-link span:last-child {
+    font-size: 0.5rem !important; /* compact label for mobile bottom bar */
+    letter-spacing: 0 !important;
   }
   .mobile-store-name {
     display: none !important;
