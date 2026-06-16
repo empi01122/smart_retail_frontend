@@ -184,7 +184,7 @@ export const Login = () => {
                   </Button>
                 </div>
               </div>
-            ) : !clerkAuth.isLoaded || (clerkAuth.isSignedIn && loading) ? (
+            ) : !clerkAuth.isLoaded || clerkAuth.isSignedIn ? (
               <div style={{ textAlign: 'center' }}>
                 <style>{`
                   @keyframes spin {
@@ -201,9 +201,14 @@ export const Login = () => {
                   animation: 'spin 1s linear infinite',
                   margin: '0 auto 12px auto'
                 }} />
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                  {!clerkAuth.isLoaded ? 'Loading Clerk...' : 'Verifying account access...'}
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '16px' }}>
+                  {clerkAuth.isSignedIn ? 'Verifying secure session with server...' : 'Loading Clerk...'}
                 </p>
+                {clerkAuth.isSignedIn && (
+                  <Button variant="outline" onClick={() => signOut()} style={{ padding: '6px 12px', fontSize: '0.78rem', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.15)', background: 'rgba(255, 255, 255, 0.04)' }}>
+                    Cancel & Sign Out
+                  </Button>
+                )}
               </div>
             ) : (
               <SignIn
