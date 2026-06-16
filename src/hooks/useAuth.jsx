@@ -11,6 +11,7 @@ export const AuthProvider = ({ children }) => {
   
   const [dbUser, setDbUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [hasNoAccess, setHasNoAccess] = useState(false);
   const [isBypass, setIsBypass] = useState(() => {
     return localStorage.getItem('auth_bypass') === 'true';
   });
@@ -25,9 +26,11 @@ export const AuthProvider = ({ children }) => {
     setIsBypass(false);
     setDbUser(null);
     setAuthToken(null);
+    setHasNoAccess(false);
   };
 
   const handleSignOut = async () => {
+    setHasNoAccess(false);
     if (isBypass) {
       logoutBypass();
     } else {
@@ -38,6 +41,11 @@ export const AuthProvider = ({ children }) => {
   // Sync session and fetch local database user details (roles, permissions)
   useEffect(() => {
     let active = true;
+
+    // Reset hasNoAccess if Clerk is loaded but not signed in (and not bypassed)
+    if (clerkAuth.isLoaded && !clerkAuth.isSignedIn && !isBypass) {
+      setHasNoAccess(false);
+    }
 
     const syncAuth = async () => {
       setAuthLoading(true);
@@ -60,18 +68,27 @@ export const AuthProvider = ({ children }) => {
           }
           setAuthToken(token);
           const profile = await getMyProfile();
-          if (active) setDbUser(profile);
+          if (active) {
+            setDbUser(profile);
+            setHasNoAccess(false); // Clear unauthorized status since sync succeeded
+          }
 
         } else if (isBypass) {
           // Dev bypass mode: Use dummy token (only when Clerk is NOT signed in)
           setAuthToken('debug');
           const profile = await getMyProfile();
-          if (active) setDbUser(profile);
+          if (active) {
+            setDbUser(profile);
+            setHasNoAccess(false);
+          }
 
         } else if (clerkAuth.isLoaded && !clerkAuth.isSignedIn) {
           // Not logged in at all
           setAuthToken(null);
-          if (active) setDbUser(null);
+          if (active) {
+            setDbUser(null);
+            setHasNoAccess(false);
+          }
         }
       } catch (err) {
         console.error('Failed to sync auth with backend:', err);
@@ -82,14 +99,9 @@ export const AuthProvider = ({ children }) => {
           setIsBypass(false);
         } else if (!isBypass && (err?.response?.status === 401 || err?.response?.status === 403)) {
           // Real Clerk session failed to authenticate with backend (explicit 401 or 403)
-          // We must sign out of Clerk to prevent infinite redirect loops
-          console.warn('[useAuth] Backend rejected Clerk token with 401/403. Clearing session & signing out of Clerk.');
+          console.warn('[useAuth] Backend rejected Clerk token with 401/403. Email has no access.');
           setAuthToken(null);
-          try {
-            await clerkAuth.signOut();
-          } catch (signOutErr) {
-            console.error('Failed to sign out of Clerk:', signOutErr);
-          }
+          if (active) setHasNoAccess(true);
         } else if (!isBypass) {
           console.error('[useAuth] Non-auth error during sync (e.g. server offline, network error, or Clerk token issue):', err);
           setAuthToken(null);
@@ -113,6 +125,7 @@ export const AuthProvider = ({ children }) => {
     isBypass,
     loginBypass,
     signOut: handleSignOut,
+    hasNoAccess,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

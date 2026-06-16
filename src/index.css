@@ -272,9 +272,7 @@ label {
     padding: 10px !important;
     padding-top: 70px !important; /* Spacer for top navbar in mobile (60px header + 10px gap) */
     padding-bottom: 70px !important; /* Spacer for bottom navbar in mobile (60px nav + 10px gap) */
-    height: 100vh !important;
-    max-height: 100vh !important;
-    overflow: hidden !important;
+    min-height: calc(100vh - 140px);
   }
 }
 
@@ -648,8 +646,19 @@ label {
 
 @media (max-width: 640px) {
   .pos-layout-container {
+    height: calc(100vh - 140px) !important;
+    max-height: calc(100vh - 140px) !important;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden !important;
+  }
+  .pos-layout-container > div {
     height: auto !important;
-    max-height: calc(100vh - 140px) !important; /* account for top + bottom nav */
+    flex: 1 !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    display: flex;
+    flex-direction: column;
   }
   .pos-product-desc {
     display: none !important; /* hide description on mobile to keep grid compact */
@@ -844,6 +853,18 @@ label {
     width: 32px !important;
     font-size: 0.78rem !important;
   }
+}
+
+.category-scroll-container {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.category-scroll-container::-webkit-scrollbar {
+  display: none !important;
 }
 
 

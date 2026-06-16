@@ -7,10 +7,17 @@ import Button from '../components/button';
 import { WrenchIcon } from '../components/icons';
 
 export const Login = () => {
-  const { isAuthenticated, loginBypass, loading, clerkUser, signOut } = useAuth();
+  const { isAuthenticated, loginBypass, loading, clerkUser, signOut, hasNoAccess } = useAuth();
   const { settings } = useSettings();
   const clerkAuth = useClerkAuth();
   const navigate = useNavigate();
+
+  // Redirect to storefront automatically once authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/storefront');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleDevBypass = () => {
     loginBypass();
@@ -25,7 +32,7 @@ export const Login = () => {
         alignItems: 'center',
         justifyContent: 'center',
         minHeight: '100vh',
-        backgroundColor: 'var(--bg-app)',
+        backgroundColor: '#05070c',
         color: '#ffffff'
       }}>
         <div style={{ width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--primary-color)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
@@ -154,51 +161,7 @@ export const Login = () => {
         <div style={{ width: '100%', maxWidth: '400px' }}>
           {/* Clerk Login Interface wrapper */}
           <div style={{ marginBottom: '24px', minHeight: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {clerkAuth.isSignedIn || isAuthenticated ? (
-              <div style={{
-                textAlign: 'center',
-                background: 'var(--bg-surface)',
-                border: '1px solid var(--bg-surface-border)',
-                borderRadius: 'var(--radius-md)',
-                padding: '30px 24px',
-                width: '100%',
-                boxShadow: 'var(--shadow-lg)',
-                backdropFilter: 'blur(16px)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '20px',
-                alignItems: 'center'
-              }}>
-                <div style={{
-                  width: '64px',
-                  height: '64px',
-                  borderRadius: '50%',
-                  backgroundColor: 'rgba(79, 70, 229, 0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.8rem',
-                  color: 'var(--primary-color)',
-                  boxShadow: '0 4px 12px rgba(79, 70, 229, 0.2)'
-                }}>
-                  👤
-                </div>
-                <div>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '6px', color: '#ffffff' }}>Active Session Found</h3>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', wordBreak: 'break-all' }}>
-                    Logged in as: <strong style={{ color: '#ffffff' }}>{clerkUser?.emailAddresses?.[0]?.emailAddress || 'Dev Bypass'}</strong>
-                  </p>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', marginTop: '10px' }}>
-                  <Button variant="primary" onClick={() => navigate('/storefront')} style={{ width: '100%', padding: '12px' }}>
-                    Continue to Console
-                  </Button>
-                  <Button variant="outline" onClick={() => signOut()} style={{ width: '100%', padding: '10px', color: 'var(--color-danger)', borderColor: 'rgba(239, 68, 68, 0.2)', background: 'rgba(239, 68, 68, 0.04)' }}>
-                    Sign Out & Switch Account
-                  </Button>
-                </div>
-              </div>
-            ) : !clerkAuth.isLoaded ? (
+            {isAuthenticated ? (
               <div style={{ textAlign: 'center' }}>
                 <style>{`
                   @keyframes spin {
@@ -216,7 +179,72 @@ export const Login = () => {
                   margin: '0 auto 12px auto'
                 }} />
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                  Loading Clerk...
+                  Redirecting to console...
+                </p>
+              </div>
+            ) : hasNoAccess ? (
+              <div style={{
+                textAlign: 'center',
+                background: 'rgba(239, 68, 68, 0.05)',
+                border: '1px solid rgba(239, 68, 68, 0.2)',
+                borderRadius: 'var(--radius-md)',
+                padding: '30px 24px',
+                width: '100%',
+                boxShadow: 'var(--shadow-lg)',
+                backdropFilter: 'blur(16px)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '20px',
+                alignItems: 'center'
+              }}>
+                <div style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.8rem',
+                  color: '#ef4444',
+                  boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)'
+                }}>
+                  🔒
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '8px', color: '#ffffff' }}>Access Denied</h3>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: '1.5' }}>
+                    Your account does not have permission to access this system. Please contact your administrator.
+                  </p>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginTop: '8px', wordBreak: 'break-all' }}>
+                    Email: {clerkUser?.emailAddresses?.[0]?.emailAddress}
+                  </p>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
+                  <Button variant="outline" onClick={() => signOut()} style={{ width: '100%', padding: '10px', color: '#ffffff', borderColor: 'rgba(255, 255, 255, 0.15)', background: 'rgba(255, 255, 255, 0.04)' }}>
+                    Sign Out & Switch Account
+                  </Button>
+                </div>
+              </div>
+            ) : !clerkAuth.isLoaded || (clerkAuth.isSignedIn && loading) ? (
+              <div style={{ textAlign: 'center' }}>
+                <style>{`
+                  @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                  }
+                `}</style>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  border: '3px solid rgba(255,255,255,0.1)',
+                  borderTopColor: 'var(--primary-color)',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite',
+                  margin: '0 auto 12px auto'
+                }} />
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                  {!clerkAuth.isLoaded ? 'Loading Clerk...' : 'Verifying account access...'}
                 </p>
               </div>
             ) : (

@@ -239,6 +239,14 @@ export const Storefront = () => {
   const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 1024);
   const [mobileTab, setMobileTab] = useState('catalog'); // 'catalog' or 'cart'
 
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileView(window.innerWidth <= 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Online order notification state
   const [pendingOrders, setPendingOrders] = useState([]);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -1033,7 +1041,7 @@ export const Storefront = () => {
           </div>
 
           {/* Category badges */}
-          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '6px' }}>
+          <div className="category-scroll-container">
             {categories.map(category => (
               <button
                 key={category}
