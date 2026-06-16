@@ -683,148 +683,35 @@ export const PublicCatalog = () => {
               }
             `}</style>
             
-            {/* SVG Molten Fire Filters Definition */}
-            <svg style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}>
-              <defs>
-                {/* Outer filter: larger, slower displacement */}
-                <filter id="fireFilterOuter" x="-30%" y="-30%" width="160%" height="160%">
-                  <feTurbulence type="fractalNoise" baseFrequency="0.01 0.02" numOctaves="3" seed="1" result="noise" />
-                  <feOffset dx="0" dy="0" in="noise" result="offsetNoise">
-                    <animate attributeName="dy" from="0" to="-200" dur="8s" repeatCount="indefinite" />
-                    <animate attributeName="dx" from="-10" to="10" dur="5s" repeatCount="indefinite" />
-                  </feOffset>
-                  <feDisplacementMap in="SourceGraphic" in2="offsetNoise" scale="18" xChannelSelector="R" yChannelSelector="G" result="displaced" />
-                  <feGaussianBlur in="displaced" stdDeviation="3" result="blur" />
-                  <feMerge>
-                    <feMergeNode in="blur" />
-                    <feMergeNode in="displaced" />
-                  </feMerge>
-                </filter>
-
-                {/* Middle filter: medium displacement */}
-                <filter id="fireFilterMiddle" x="-20%" y="-20%" width="140%" height="140%">
-                  <feTurbulence type="fractalNoise" baseFrequency="0.02 0.04" numOctaves="3" seed="2" result="noise" />
-                  <feOffset dx="0" dy="0" in="noise" result="offsetNoise">
-                    <animate attributeName="dy" from="0" to="-200" dur="5.5s" repeatCount="indefinite" />
-                    <animate attributeName="dx" from="-15" to="15" dur="4s" repeatCount="indefinite" />
-                  </feOffset>
-                  <feDisplacementMap in="SourceGraphic" in2="offsetNoise" scale="12" xChannelSelector="R" yChannelSelector="G" result="displaced" />
-                  <feGaussianBlur in="displaced" stdDeviation="1.5" result="blur" />
-                  <feMerge>
-                    <feMergeNode in="blur" />
-                    <feMergeNode in="displaced" />
-                  </feMerge>
-                </filter>
-
-                {/* Inner filter: smaller, faster displacement */}
-                <filter id="fireFilterInner" x="-10%" y="-10%" width="120%" height="120%">
-                  <feTurbulence type="fractalNoise" baseFrequency="0.03 0.06" numOctaves="3" seed="3" result="noise" />
-                  <feOffset dx="0" dy="0" in="noise" result="offsetNoise">
-                    <animate attributeName="dy" from="0" to="-200" dur="3.5s" repeatCount="indefinite" />
-                    <animate attributeName="dx" from="-8" to="8" dur="3s" repeatCount="indefinite" />
-                  </feOffset>
-                  <feDisplacementMap in="SourceGraphic" in2="offsetNoise" scale="7" xChannelSelector="R" yChannelSelector="G" result="displaced" />
-                  <feGaussianBlur in="displaced" stdDeviation="0.5" result="blur" />
-                  <feMerge>
-                    <feMergeNode in="blur" />
-                    <feMergeNode in="displaced" />
-                  </feMerge>
-                </filter>
-              </defs>
-            </svg>
-
-            {/* Stacked Molten Fire Border Outline Layers */}
-            {/* Outer red flame layer */}
+            {/* High-Performance Glowing Flame Border (60fps on mobile) */}
             <div style={{
               position: 'absolute',
-              width: '312px',
-              height: '412px',
-              borderRadius: '26px',
-              background: 'linear-gradient(0deg, #b30000, #e25822, #b30000)',
-              backgroundSize: '100% 200%',
-              animation: 'fireGradient 4s linear infinite, fireFlickerOuter 0.15s infinite alternate',
-              filter: 'url(#fireFilterOuter) drop-shadow(0 0 12px #b30000)',
-              zIndex: 1,
-              pointerEvents: 'none'
-            }} />
-
-            {/* Middle orange flame layer */}
-            <div style={{
-              position: 'absolute',
-              width: '308px',
-              height: '408px',
-              borderRadius: '24px',
-              background: 'linear-gradient(120deg, #e25822, #f39c12, #e25822)',
-              backgroundSize: '200% 100%',
-              animation: 'fireGradient 3s linear infinite, fireFlickerMiddle 0.2s infinite alternate',
-              filter: 'url(#fireFilterMiddle) drop-shadow(0 0 8px #e25822)',
-              zIndex: 1,
-              pointerEvents: 'none'
-            }} />
-
-            {/* Inner yellow flame layer */}
-            <div style={{
-              position: 'absolute',
-              width: '304px',
-              height: '404px',
+              width: '306px',
+              height: '406px',
               borderRadius: '22px',
-              background: 'linear-gradient(240deg, #f1c40f, #ffffff, #f1c40f)',
-              backgroundSize: '150% 150%',
-              animation: 'fireGradient 2s linear infinite, fireFlickerInner 0.1s infinite alternate',
-              filter: 'url(#fireFilterInner) drop-shadow(0 0 4px #f1c40f)',
+              background: 'linear-gradient(135deg, #b30000, #e25822, #f1c40f, #e25822, #b30000)',
+              backgroundSize: '400% 400%',
+              animation: 'fireGradient 6s ease infinite, fireGlowPulse 2s infinite alternate',
               zIndex: 1,
               pointerEvents: 'none'
             }} />
-
-            {/* Floating Sparks/Embers */}
-            <div style={{
-              position: 'absolute',
-              width: '3px',
-              height: '3px',
-              borderRadius: '50%',
-              backgroundColor: '#ffba08',
-              boxShadow: '0 0 6px #f48c06, 0 0 10px #dc2f02',
-              pointerEvents: 'none',
-              zIndex: 3,
-              animation: 'spark-left 7s infinite linear',
-              animationDelay: '1s'
-            }} />
-            <div style={{
-              position: 'absolute',
-              width: '4px',
-              height: '4px',
-              borderRadius: '50%',
-              backgroundColor: '#ffba08',
-              boxShadow: '0 0 6px #f48c06, 0 0 10px #dc2f02',
-              pointerEvents: 'none',
-              zIndex: 3,
-              animation: 'spark-right 8s infinite linear',
-              animationDelay: '3s'
-            }} />
-            <div style={{
-              position: 'absolute',
-              width: '3px',
-              height: '3px',
-              borderRadius: '50%',
-              backgroundColor: '#ffea00',
-              boxShadow: '0 0 6px #f48c06, 0 0 10px #dc2f02',
-              pointerEvents: 'none',
-              zIndex: 3,
-              animation: 'spark-mid-left 6s infinite linear',
-              animationDelay: '0s'
-            }} />
-            <div style={{
-              position: 'absolute',
-              width: '2px',
-              height: '2px',
-              borderRadius: '50%',
-              backgroundColor: '#ffea00',
-              boxShadow: '0 0 4px #f48c06, 0 0 8px #dc2f02',
-              pointerEvents: 'none',
-              zIndex: 3,
-              animation: 'spark-mid-right 9s infinite linear',
-              animationDelay: '4.5s'
-            }} />
+            <style>{`
+              @keyframes fireGradient {
+                0% { background-position: 0% 50%; }
+                50% { background-position: 100% 50%; }
+                100% { background-position: 0% 50%; }
+              }
+              @keyframes fireGlowPulse {
+                0%, 100% { 
+                  box-shadow: 0 0 12px rgba(226, 88, 34, 0.45), 0 0 4px rgba(241, 196, 15, 0.2); 
+                  transform: scale(0.995);
+                }
+                50% { 
+                  box-shadow: 0 0 24px rgba(226, 88, 34, 0.8), 0 0 10px rgba(241, 196, 15, 0.45); 
+                  transform: scale(1.005);
+                }
+              }
+            `}</style>
 
             {/* Chatbot Card itself */}
             <div style={{
