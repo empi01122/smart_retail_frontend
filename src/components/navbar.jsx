@@ -40,18 +40,17 @@ export const Navbar = () => {
     const entId = e.target.value;
     setSelectedEntId(entId);
     localStorage.setItem('active_enterprise_id', entId);
-    window.location.reload();
+    window.location.href = window.location.pathname; // reload same page cleanly
   };
 
   const handleRoleChange = (e) => {
     const nextRole = e.target.value;
     localStorage.setItem('active_role', nextRole);
     if (nextRole === 'buyer') {
-      navigate('/catalog');
+      window.location.href = '/catalog'; // Use href instead of navigate + reload
     } else {
-      navigate('/storefront');
+      window.location.href = '/storefront';
     }
-    window.location.reload();
   };
 
   const handleLogout = async () => {

@@ -639,6 +639,13 @@ label {
   }
 }
 
+@media (max-width: 640px) {
+  .pos-layout-container {
+    height: calc(100vh - 130px) !important; /* account for top + bottom nav */
+    max-height: calc(100vh - 130px) !important;
+  }
+}
+
 /* Responsive adjustments for very small screens (native mobile look) */
 @media (max-width: 480px) {
   .mobile-nav-link span:last-child {
