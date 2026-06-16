@@ -1132,8 +1132,7 @@ export const Storefront = () => {
                   )}
 
                   {/* Cover Image container */}
-                  <div style={{
-                    height: '90px',
+                  <div className="pos-product-img-container" style={{
                     width: '100%',
                     backgroundColor: 'rgba(0,0,0,0.15)',
                     display: 'flex',
@@ -1194,16 +1193,27 @@ export const Storefront = () => {
                       {product.description || 'No description provided.'}
                     </p>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
-                      <span style={{ fontWeight: '800', color: 'var(--text-primary)', fontSize: '0.88rem' }}>
-                        {product.price.toFixed(2)} FCFA
+                    <div style={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      gap: '2px', 
+                      marginTop: 'auto',
+                      alignItems: 'flex-start',
+                      width: '100%'
+                    }}>
+                      <span style={{ fontWeight: '800', color: 'var(--text-primary)', fontSize: '0.82rem' }}>
+                        {Math.round(product.price).toLocaleString()} FCFA
                       </span>
                       
                       {/* Stock status indicator */}
                       <span style={{
-                        fontSize: '0.68rem',
+                        fontSize: '0.65rem',
                         fontWeight: '600',
                         color: outOfStock ? 'var(--color-danger)' : lowStock ? 'var(--color-warning)' : 'var(--color-success)',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        width: '100%'
                       }}>
                         {outOfStock ? 'Out of stock' : lowStock ? `Only ${product.stock} left` : `${product.stock} units`}
                       </span>
@@ -1318,7 +1328,7 @@ export const Storefront = () => {
                         {titleCase(item.product.name)}
                       </h4>
                       <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                        {item.product.price.toFixed(2)} FCFA each
+                        {Math.round(item.product.price).toLocaleString()} FCFA each
                       </span>
                     </div>
 
@@ -1395,7 +1405,7 @@ export const Storefront = () => {
 
                     <div className="pos-cart-item-total" style={{ textAlign: 'right', minWidth: '60px' }}>
                       <span style={{ fontWeight: '700', fontSize: '0.88rem' }}>
-                        {(item.product.price * item.quantity).toFixed(2)} FCFA
+                        {Math.round(item.product.price * item.quantity).toLocaleString()} FCFA
                       </span>
                     </div>
                   </div>
@@ -1414,7 +1424,7 @@ export const Storefront = () => {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
               <span style={{ color: 'var(--text-secondary)' }}>Subtotal</span>
-              <span>{cartTotal.toFixed(2)} FCFA</span>
+              <span>{Math.round(cartTotal).toLocaleString()} FCFA</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>
               <span style={{ color: 'var(--text-secondary)' }}>Tax (0%)</span>
@@ -1457,7 +1467,7 @@ export const Storefront = () => {
               marginBottom: '10px'
             }}>
               <span>Total</span>
-              <span style={{ color: 'var(--accent-color)' }}>{cartTotal.toFixed(2)} FCFA</span>
+              <span style={{ color: 'var(--accent-color)' }}>{Math.round(cartTotal).toLocaleString()} FCFA</span>
             </div>
 
             <Button

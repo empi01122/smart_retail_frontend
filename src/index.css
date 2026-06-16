@@ -763,7 +763,11 @@ label {
 
 .pos-product-card {
   border-radius: 16px;
-  min-height: 215px;
+  min-height: 190px;
+}
+
+.pos-product-img-container {
+  height: 90px;
 }
 
 @media (max-width: 640px) {
@@ -795,8 +799,12 @@ label {
   }
   
   .pos-product-card {
-    min-height: 165px !important;
+    min-height: 135px !important;
     border-radius: 12px !important;
+  }
+  
+  .pos-product-img-container {
+    height: 70px !important;
   }
   
   /* Hide item image thumbnails in checkout ledger to reclaim width */
