@@ -261,7 +261,7 @@ label {
 
 @media (max-width: 1024px) {
   .main-content {
-    margin-left: 80px; /* Collapsed sidebar width */
+    margin-left: 210px !important; /* Responsive sidebar width + gap */
     padding: 20px;
   }
 }
@@ -380,62 +380,69 @@ label {
 
 @media (max-width: 1024px) {
   .sidebar-panel {
-    width: 80px;
+    width: 190px !important;
     left: 10px;
     top: 10px;
     bottom: 10px;
-    padding: 16px 8px;
+    padding: 16px 10px !important;
   }
   
-  /* Hide text labels, show only icons in menu */
+  /* Keep navigation labels visible and clean */
   .sidebar-panel nav a span:last-child {
-    display: none !important;
+    display: inline-block !important;
+    font-size: 0.82rem !important;
   }
   .sidebar-panel nav a {
-    justify-content: center;
-    padding: 12px !important;
+    justify-content: flex-start !important;
+    padding: 8px 10px !important;
+    gap: 8px !important;
   }
   
-  /* Show role position badge in profile footer, hide only name */
+  /* Keep profile details visible and responsive */
   .sidebar-panel .profile-details {
     display: flex !important;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    margin-top: 4px;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    width: auto !important;
+    margin-top: 0 !important;
   }
   .sidebar-panel .profile-details h4 {
-    display: none !important;
+    display: block !important;
+    font-size: 0.8rem !important;
   }
   .sidebar-panel .profile-details span {
-    font-size: 0.52rem !important;
-    padding: 2px 4px !important;
-    margin-top: 0 !important;
+    font-size: 0.58rem !important;
+    padding: 2px 6px !important;
+    margin-top: 2px !important;
     white-space: nowrap;
   }
   .sidebar-panel .profile-container {
-    flex-direction: column !important;
-    justify-content: center !important;
-    padding: 4px !important;
-    gap: 4px !important;
+    flex-direction: row !important;
+    justify-content: flex-start !important;
+    padding: 2px 4px !important;
+    gap: 8px !important;
   }
   .sidebar-panel .brand-text {
-    display: none !important;
+    display: block !important;
+  }
+  .sidebar-panel .brand-text h2 {
+    font-size: 0.78rem !important;
   }
   .sidebar-panel .brand-logo-container {
-    padding: 8px 0 20px 0 !important;
-    justify-content: center !important;
-    border-bottom: none !important;
+    padding: 6px 4px 10px 4px !important;
+    justify-content: flex-start !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
   }
   .sidebar-panel .logout-btn-text {
-    display: none !important;
+    display: inline-block !important;
+    font-size: 0.8rem !important;
   }
   .sidebar-panel .logout-btn {
-    width: 36px !important;
-    height: 36px !important;
-    padding: 0 !important;
-    border-radius: 50% !important;
-    margin: 0 auto !important;
+    width: 100% !important;
+    height: auto !important;
+    padding: 8px 10px !important;
+    border-radius: 10px !important;
+    margin: 0 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -776,9 +783,10 @@ label {
 }
 
 @media (max-width: 480px) {
-  /* Hide tab label texts - leaving icons and badges only */
+  /* Keep tab label texts visible but compact on mobile */
   .pos-mobile-tab-text {
-    display: none !important;
+    display: inline-block !important;
+    font-size: 0.72rem !important;
   }
   
   /* Hide product description to keep the card grid compact */

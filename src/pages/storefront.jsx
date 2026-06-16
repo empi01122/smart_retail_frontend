@@ -934,7 +934,6 @@ export const Storefront = () => {
         display: (!isMobileView || mobileTab === 'catalog') ? 'flex' : 'none',
         flexDirection: 'column',
         gap: '12px',
-        height: '100%',
         maxHeight: '100%',
         minHeight: 0
       }}>
@@ -1074,7 +1073,7 @@ export const Storefront = () => {
             gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
             gap: '10px',
             overflowY: 'auto',
-            flex: 1,
+            flex: '0 1 auto',
             minHeight: 0,
             paddingRight: '4px'
           }}>
