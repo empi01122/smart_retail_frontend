@@ -192,6 +192,476 @@ const TOUR_STEPS = [
   }
 ];
 
+const ReviewChatbot = ({ selectedEntId, selectedEnt, fetchReviews, cartOpen }) => {
+  const [chatbotOpen, setChatbotOpen] = useState(false);
+  const [chatbotState, setChatbotState] = useState('welcome'); // welcome | comment | name | submitting | finished
+  const [chatbotRating, setChatbotRating] = useState(5);
+  const [chatbotComment, setChatbotComment] = useState('');
+  const [chatbotName, setChatbotName] = useState('');
+  const [hoveredRating, setHoveredRating] = useState(0);
+
+  const API_BASE = getApiBase();
+
+  const handleClose = () => {
+    setChatbotOpen(false);
+    setChatbotState('welcome');
+    setChatbotRating(5);
+    setChatbotComment('');
+    setChatbotName('');
+  };
+
+  const handleRatingSelect = (rate) => {
+    setChatbotRating(rate);
+    setChatbotState('comment');
+  };
+
+  const handleCommentSubmit = (e) => {
+    e.preventDefault();
+    if (!chatbotComment.trim()) return;
+    if (isGibberish(chatbotComment)) {
+      alert("Please share a meaningful sentence about your experience!");
+      return;
+    }
+    setChatbotState('name');
+  };
+
+  const handleNameSubmit = async (e) => {
+    e.preventDefault();
+    if (!chatbotName.trim()) return;
+    
+    setChatbotState('submitting');
+    try {
+      await axios.post(`${API_BASE}/enterprises/${selectedEntId}/reviews`, {
+        customer_name: chatbotName.trim(),
+        rating: chatbotRating,
+        comment: chatbotComment.trim()
+      });
+      setChatbotState('finished');
+      fetchReviews();
+    } catch (err) {
+      console.error("Failed to submit review:", err);
+      alert("Failed to submit review. Please try again.");
+      setChatbotState('comment');
+    }
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      bottom: '24px',
+      right: cartOpen ? 'auto' : '24px',
+      left: cartOpen ? '24px' : 'auto',
+      zIndex: 9999,
+      fontFamily: 'Inter, system-ui, sans-serif'
+    }}>
+      {!chatbotOpen && (
+        <button
+          id="customer-review-btn"
+          onClick={() => setChatbotOpen(true)}
+          style={{
+            padding: '12px 20px',
+            borderRadius: '30px',
+            backgroundColor: 'var(--primary-color, #4F46E5)',
+            color: '#ffffff',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            boxShadow: '0 8px 24px rgba(79, 70, 229, 0.35)',
+            transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            fontWeight: '700',
+            fontSize: '0.86rem',
+          }}
+          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{ width: '18px', height: '18px' }}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+          Review Store
+        </button>
+      )}
+
+      {chatbotOpen && (
+        <div style={{
+          position: 'relative',
+          width: '350px',
+          height: '450px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          animation: 'slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+        }}>
+          <style>{`
+            @keyframes slideUp {
+              0% { transform: translateY(20px); opacity: 0; }
+              100% { transform: translateY(0); opacity: 1; }
+            }
+            @keyframes fireGradient {
+              0% { background-position: 0% 50%; }
+              50% { background-position: 100% 50%; }
+              100% { background-position: 0% 50%; }
+            }
+            @keyframes fireFlickerOuter {
+              0%, 100% { opacity: 0.7; }
+              50% { opacity: 0.85; }
+            }
+            @keyframes fireFlickerMiddle {
+              0%, 100% { opacity: 0.8; }
+              50% { opacity: 0.95; }
+            }
+            @keyframes fireFlickerInner {
+              0%, 100% { opacity: 0.85; }
+              50% { opacity: 1.0; }
+            }
+            @keyframes spark-left {
+              0% { transform: translate(30px, 420px) scale(0.8); opacity: 0; }
+              10% { opacity: 1; }
+              80% { opacity: 0.8; }
+              100% { transform: translate(15px, 30px) scale(0.2); opacity: 0; }
+            }
+            @keyframes spark-right {
+              0% { transform: translate(320px, 420px) scale(0.8); opacity: 0; }
+              15% { opacity: 1; }
+              85% { opacity: 0.8; }
+              100% { transform: translate(335px, 30px) scale(0.2); opacity: 0; }
+            }
+            @keyframes spark-mid-left {
+              0% { transform: translate(100px, 425px) scale(1); opacity: 0; }
+              5% { opacity: 1; }
+              90% { opacity: 0.6; }
+              100% { transform: translate(90px, 15px) scale(0); opacity: 0; }
+            }
+            @keyframes spark-mid-right {
+              0% { transform: translate(250px, 425px) scale(1); opacity: 0; }
+              5% { opacity: 1; }
+              90% { opacity: 0.6; }
+              100% { transform: translate(260px, 15px) scale(0); opacity: 0; }
+            }
+          `}</style>
+          
+          {/* SVG Molten Fire Filters Definition */}
+          <svg style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}>
+            <defs>
+              {/* Outer filter: larger, slower displacement */}
+              <filter id="fireFilterOuter" x="-30%" y="-30%" width="160%" height="160%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.01 0.02" numOctaves="3" seed="1" result="noise" />
+                <feOffset dx="0" dy="0" in="noise" result="offsetNoise">
+                  <animate attributeName="dy" from="0" to="-200" dur="8s" repeatCount="indefinite" />
+                  <animate attributeName="dx" from="-10" to="10" dur="5s" repeatCount="indefinite" />
+                </feOffset>
+                <feDisplacementMap in="SourceGraphic" in2="offsetNoise" scale="18" xChannelSelector="R" yChannelSelector="G" result="displaced" />
+                <feGaussianBlur in="displaced" stdDeviation="3" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="displaced" />
+                </feMerge>
+              </filter>
+
+              {/* Middle filter: medium displacement */}
+              <filter id="fireFilterMiddle" x="-20%" y="-20%" width="140%" height="140%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.02 0.04" numOctaves="3" seed="2" result="noise" />
+                <feOffset dx="0" dy="0" in="noise" result="offsetNoise">
+                  <animate attributeName="dy" from="0" to="-200" dur="5.5s" repeatCount="indefinite" />
+                  <animate attributeName="dx" from="-15" to="15" dur="4s" repeatCount="indefinite" />
+                </feOffset>
+                <feDisplacementMap in="SourceGraphic" in2="offsetNoise" scale="12" xChannelSelector="R" yChannelSelector="G" result="displaced" />
+                <feGaussianBlur in="displaced" stdDeviation="1.5" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="displaced" />
+                </feMerge>
+              </filter>
+
+              {/* Inner filter: smaller, faster displacement */}
+              <filter id="fireFilterInner" x="-10%" y="-10%" width="120%" height="120%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.03 0.06" numOctaves="3" seed="3" result="noise" />
+                <feOffset dx="0" dy="0" in="noise" result="offsetNoise">
+                  <animate attributeName="dy" from="0" to="-200" dur="3.5s" repeatCount="indefinite" />
+                  <animate attributeName="dx" from="-8" to="8" dur="3s" repeatCount="indefinite" />
+                </feOffset>
+                <feDisplacementMap in="SourceGraphic" in2="offsetNoise" scale="7" xChannelSelector="R" yChannelSelector="G" result="displaced" />
+                <feGaussianBlur in="displaced" stdDeviation="0.5" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="displaced" />
+                </feMerge>
+              </filter>
+            </defs>
+          </svg>
+
+          {/* Stacked Molten Fire Border Outline Layers */}
+          {/* Outer red flame layer */}
+          <div style={{
+            position: 'absolute',
+            width: '312px',
+            height: '412px',
+            borderRadius: '26px',
+            background: 'linear-gradient(0deg, #b30000, #e25822, #b30000)',
+            backgroundSize: '100% 200%',
+            animation: 'fireGradient 4s linear infinite, fireFlickerOuter 0.15s infinite alternate',
+            filter: 'url(#fireFilterOuter) drop-shadow(0 0 12px #b30000)',
+            zIndex: 1,
+            pointerEvents: 'none'
+          }} />
+
+          {/* Middle orange flame layer */}
+          <div style={{
+            position: 'absolute',
+            width: '308px',
+            height: '408px',
+            borderRadius: '24px',
+            background: 'linear-gradient(120deg, #e25822, #f39c12, #e25822)',
+            backgroundSize: '200% 100%',
+            animation: 'fireGradient 3s linear infinite, fireFlickerMiddle 0.2s infinite alternate',
+            filter: 'url(#fireFilterMiddle) drop-shadow(0 0 8px #e25822)',
+            zIndex: 1,
+            pointerEvents: 'none'
+          }} />
+
+          {/* Inner yellow flame layer */}
+          <div style={{
+            position: 'absolute',
+            width: '304px',
+            height: '404px',
+            borderRadius: '22px',
+            background: 'linear-gradient(240deg, #f1c40f, #ffffff, #f1c40f)',
+            backgroundSize: '150% 150%',
+            animation: 'fireGradient 2s linear infinite, fireFlickerInner 0.1s infinite alternate',
+            filter: 'url(#fireFilterInner) drop-shadow(0 0 4px #f1c40f)',
+            zIndex: 1,
+            pointerEvents: 'none'
+          }} />
+
+          {/* Floating Sparks/Embers */}
+          <div style={{
+            position: 'absolute',
+            width: '3px',
+            height: '3px',
+            borderRadius: '50%',
+            backgroundColor: '#ffba08',
+            boxShadow: '0 0 6px #f48c06, 0 0 10px #dc2f02',
+            pointerEvents: 'none',
+            zIndex: 3,
+            animation: 'spark-left 7s infinite linear',
+            animationDelay: '1s'
+          }} />
+          <div style={{
+            position: 'absolute',
+            width: '4px',
+            height: '4px',
+            borderRadius: '50%',
+            backgroundColor: '#ffba08',
+            boxShadow: '0 0 6px #f48c06, 0 0 10px #dc2f02',
+            pointerEvents: 'none',
+            zIndex: 3,
+            animation: 'spark-right 8s infinite linear',
+            animationDelay: '3s'
+          }} />
+          <div style={{
+            position: 'absolute',
+            width: '3px',
+            height: '3px',
+            borderRadius: '50%',
+            backgroundColor: '#ffea00',
+            boxShadow: '0 0 6px #f48c06, 0 0 10px #dc2f02',
+            pointerEvents: 'none',
+            zIndex: 3,
+            animation: 'spark-mid-left 6s infinite linear',
+            animationDelay: '0s'
+          }} />
+          <div style={{
+            position: 'absolute',
+            width: '2px',
+            height: '2px',
+            borderRadius: '50%',
+            backgroundColor: '#ffea00',
+            boxShadow: '0 0 4px #f48c06, 0 0 8px #dc2f02',
+            pointerEvents: 'none',
+            zIndex: 3,
+            animation: 'spark-mid-right 9s infinite linear',
+            animationDelay: '4.5s'
+          }} />
+
+          {/* Chatbot Card itself */}
+          <div style={{
+            width: '300px',
+            height: '400px',
+            backgroundColor: 'var(--bg-sidebar, #111827)',
+            borderRadius: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            zIndex: 2,
+            boxShadow: 'inset 0 0 20px rgba(239, 68, 68, 0.1)'
+          }}>
+            
+            <div style={{
+              backgroundColor: 'var(--primary-color)',
+              padding: '16px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              color: '#ffffff'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#10B981' }} />
+                <strong style={{ fontSize: '0.9rem' }}>Feedback Assistant</strong>
+              </div>
+              <button onClick={handleClose} style={{ background: 'none', border: 'none', color: '#ffffff', fontSize: '1.2rem', cursor: 'pointer', lineHeight: 1 }}>×</button>
+            </div>
+
+            <div style={{ flex: 1, padding: '16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '0.85rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxWidth: '85%' }}>
+                <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 'bold' }}>Assistant</span>
+                <div style={{ backgroundColor: 'var(--glass-card-bg)', border: '1px solid var(--glass-card-border)', padding: '10px 14px', borderRadius: '14px 14px 14px 0px', color: 'var(--text-primary)' }}>
+                  Hi there! Thank you for choosing <strong>{selectedEnt?.name || 'our store'}</strong>. How would you rate your shopping experience today?
+                </div>
+              </div>
+
+              {chatbotState === 'welcome' && (
+                <div 
+                  style={{ display: 'flex', gap: '8px', justifyContent: 'center', margin: '12px 0' }}
+                  onMouseLeave={() => setHoveredRating(0)}
+                >
+                  {[1, 2, 3, 4, 5].map(rate => (
+                    <button
+                      key={rate}
+                      type="button"
+                      onClick={() => handleRatingSelect(rate)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: 0,
+                        transition: 'transform 0.15s'
+                      }}
+                      onMouseEnter={(e) => {
+                        setHoveredRating(rate);
+                        e.currentTarget.style.transform = 'scale(1.25)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }}
+                    >
+                      <StarIcon filled={hoveredRating > 0 ? rate <= hoveredRating : rate <= chatbotRating} size={28} />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {['comment', 'name', 'submitting', 'finished'].includes(chatbotState) && (
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxWidth: '85%', alignSelf: 'flex-end', alignItems: 'flex-end' }}>
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 'bold' }}>You</span>
+                    <div style={{ backgroundColor: 'var(--primary-color)', padding: '10px 14px', borderRadius: '14px 14px 0px 14px', color: '#ffffff' }}>
+                      I rate it {chatbotRating} / 5 stars.
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxWidth: '85%' }}>
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 'bold' }}>Assistant</span>
+                    <div style={{ backgroundColor: 'var(--glass-card-bg)', border: '1px solid var(--glass-card-border)', padding: '10px 14px', borderRadius: '14px 14px 14px 0px', color: 'var(--text-primary)' }}>
+                      {chatbotRating >= 4 ? "Awesome! What did you like most about your experience?" : "We're sorry to hear that. What went wrong, and how can we improve?"}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {chatbotState === 'comment' && (
+                <form onSubmit={handleCommentSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <textarea
+                    required
+                    placeholder="Type your feedback here..."
+                    value={chatbotComment}
+                    onChange={e => setChatbotComment(e.target.value)}
+                    rows={3}
+                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--input-border)', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', outline: 'none', resize: 'none', boxSizing: 'border-box' }}
+                  />
+                  <button
+                    type="submit"
+                    style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', backgroundColor: 'var(--primary-color)', color: '#ffffff', fontWeight: '700', cursor: 'pointer', alignSelf: 'flex-end' }}
+                  >
+                    Next
+                  </button>
+                </form>
+              )}
+
+              {['name', 'submitting', 'finished'].includes(chatbotState) && (
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxWidth: '85%', alignSelf: 'flex-end', alignItems: 'flex-end' }}>
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 'bold' }}>You</span>
+                    <div style={{ backgroundColor: 'var(--primary-color)', padding: '10px 14px', borderRadius: '14px 14px 0px 14px', color: '#ffffff', wordBreak: 'break-word' }}>
+                      "{chatbotComment}"
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxWidth: '85%' }}>
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 'bold' }}>Assistant</span>
+                    <div style={{ backgroundColor: 'var(--glass-card-bg)', border: '1px solid var(--glass-card-border)', padding: '10px 14px', borderRadius: '14px 14px 14px 0px', color: 'var(--text-primary)' }}>
+                      Understood! Lastly, what is your name so we can record your review?
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {chatbotState === 'name' && (
+                <form onSubmit={handleNameSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Enter your name..."
+                    value={chatbotName}
+                    onChange={e => setChatbotName(e.target.value)}
+                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--input-border)', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                  <button
+                    type="submit"
+                    style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', backgroundColor: 'var(--primary-color)', color: '#ffffff', fontWeight: '700', cursor: 'pointer', alignSelf: 'flex-end' }}
+                  >
+                    Submit Review
+                  </button>
+                </form>
+              )}
+
+              {chatbotState === 'submitting' && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 0' }}>
+                  <div style={{ width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--primary-color)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                  <span style={{ color: 'var(--text-muted)' }}>Saving feedback to store...</span>
+                </div>
+              )}
+
+              {chatbotState === 'finished' && (
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxWidth: '85%', alignSelf: 'flex-end', alignItems: 'flex-end' }}>
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 'bold' }}>You</span>
+                    <div style={{ backgroundColor: 'var(--primary-color)', padding: '10px 14px', borderRadius: '14px 14px 0px 14px', color: '#ffffff' }}>
+                      My name is {chatbotName}.
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxWidth: '85%' }}>
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 'bold' }}>Assistant</span>
+                    <div style={{ backgroundColor: 'var(--glass-card-bg)', border: '1px solid var(--glass-card-border)', padding: '10px 14px', borderRadius: '14px 14px 14px 0px', color: '#10B981', fontWeight: '700' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" style={{ width: '16px', height: '16px', color: '#10B981' }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                        <span>Thank you! Your feedback has been recorded successfully. Have a nice day!</span>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const PublicCatalog = () => {
   const { isActualTechnician, role } = useRole();
   const timerRef = useRef(null);
@@ -392,11 +862,6 @@ export const PublicCatalog = () => {
 
   // Reviews & Testimonials States
   const [reviews, setReviews] = useState([]);
-  const [chatbotOpen, setChatbotOpen] = useState(false);
-  const [chatbotState, setChatbotState] = useState('welcome'); // welcome | comment | name | submitting | finished
-  const [chatbotRating, setChatbotRating] = useState(5);
-  const [chatbotComment, setChatbotComment] = useState('');
-  const [chatbotName, setChatbotName] = useState('');
   const [testimonialIdx, setTestimonialIdx] = useState(0);
 
   // Sponsored Ad Popup States
@@ -416,7 +881,6 @@ export const PublicCatalog = () => {
   const [disputeReason, setDisputeReason] = useState('');
   const [disputePic, setDisputePic] = useState(null);
   const [disputeSubmitting, setDisputeSubmitting] = useState(false);
-  const [hoveredRating, setHoveredRating] = useState(0);
 
   // Lock scrolling when drawers or dispute modals are open
   useEffect(() => {
@@ -469,353 +933,7 @@ export const PublicCatalog = () => {
     fetchReviews();
   }, [fetchReviews]);
 
-  const renderReviewChatbot = () => {
-    const handleClose = () => {
-      setChatbotOpen(false);
-      setChatbotState('welcome');
-      setChatbotRating(5);
-      setChatbotComment('');
-      setChatbotName('');
-    };
 
-    const handleRatingSelect = (rate) => {
-      setChatbotRating(rate);
-      setChatbotState('comment');
-    };
-
-    const handleCommentSubmit = (e) => {
-      e.preventDefault();
-      if (!chatbotComment.trim()) return;
-      if (isGibberish(chatbotComment)) {
-        alert("Please share a meaningful sentence about your experience!");
-        return;
-      }
-      setChatbotState('name');
-    };
-
-    const handleNameSubmit = async (e) => {
-      e.preventDefault();
-      if (!chatbotName.trim()) return;
-      
-      setChatbotState('submitting');
-      try {
-        await axios.post(`${API_BASE}/enterprises/${selectedEntId}/reviews`, {
-          customer_name: chatbotName.trim(),
-          rating: chatbotRating,
-          comment: chatbotComment.trim()
-        });
-        setChatbotState('finished');
-        fetchReviews();
-      } catch (err) {
-        console.error("Failed to submit review:", err);
-        alert("Failed to submit review. Please try again.");
-        setChatbotState('comment');
-      }
-    };
-
-    return (
-      <div style={{
-        position: 'fixed',
-        bottom: '24px',
-        right: cartOpen ? 'auto' : '24px',
-        left: cartOpen ? '24px' : 'auto',
-        zIndex: 9999,
-        fontFamily: 'Inter, system-ui, sans-serif'
-      }}>
-        {!chatbotOpen && (
-          <button
-            id="customer-review-btn"
-            onClick={() => setChatbotOpen(true)}
-            style={{
-              padding: '12px 20px',
-              borderRadius: '30px',
-              backgroundColor: 'var(--primary-color, #4F46E5)',
-              color: '#ffffff',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              boxShadow: '0 8px 24px rgba(79, 70, 229, 0.35)',
-              transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
-              fontWeight: '700',
-              fontSize: '0.86rem',
-            }}
-            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
-            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{ width: '18px', height: '18px' }}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-            Review Store
-          </button>
-        )}
-
-        {chatbotOpen && (
-          <div style={{
-            position: 'relative',
-            width: '350px',
-            height: '450px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            animation: 'slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
-          }}>
-            <style>{`
-              @keyframes slideUp {
-                0% { transform: translateY(20px); opacity: 0; }
-                100% { transform: translateY(0); opacity: 1; }
-              }
-              @keyframes fireGradient {
-                0% { background-position: 0% 50%; }
-                50% { background-position: 100% 50%; }
-                100% { background-position: 0% 50%; }
-              }
-              @keyframes fireFlickerOuter {
-                0%, 100% { opacity: 0.7; }
-                50% { opacity: 0.85; }
-              }
-              @keyframes fireFlickerMiddle {
-                0%, 100% { opacity: 0.8; }
-                50% { opacity: 0.95; }
-              }
-              @keyframes fireFlickerInner {
-                0%, 100% { opacity: 0.85; }
-                50% { opacity: 1.0; }
-              }
-              @keyframes spark-left {
-                0% { transform: translate(30px, 420px) scale(0.8); opacity: 0; }
-                10% { opacity: 1; }
-                80% { opacity: 0.8; }
-                100% { transform: translate(15px, 30px) scale(0.2); opacity: 0; }
-              }
-              @keyframes spark-right {
-                0% { transform: translate(320px, 420px) scale(0.8); opacity: 0; }
-                15% { opacity: 1; }
-                85% { opacity: 0.8; }
-                100% { transform: translate(335px, 30px) scale(0.2); opacity: 0; }
-              }
-              @keyframes spark-mid-left {
-                0% { transform: translate(100px, 425px) scale(1); opacity: 0; }
-                5% { opacity: 1; }
-                90% { opacity: 0.6; }
-                100% { transform: translate(90px, 15px) scale(0); opacity: 0; }
-              }
-              @keyframes spark-mid-right {
-                0% { transform: translate(250px, 425px) scale(1); opacity: 0; }
-                5% { opacity: 1; }
-                90% { opacity: 0.6; }
-                100% { transform: translate(260px, 15px) scale(0); opacity: 0; }
-              }
-            `}</style>
-            
-            {/* High-Performance Glowing Flame Border (60fps on mobile) */}
-            <div style={{
-              position: 'absolute',
-              width: '306px',
-              height: '406px',
-              borderRadius: '22px',
-              background: 'linear-gradient(135deg, #b30000, #e25822, #f1c40f, #e25822, #b30000)',
-              backgroundSize: '400% 400%',
-              animation: 'fireGradient 6s ease infinite, fireGlowPulse 2s infinite alternate',
-              zIndex: 1,
-              pointerEvents: 'none'
-            }} />
-            <style>{`
-              @keyframes fireGradient {
-                0% { background-position: 0% 50%; }
-                50% { background-position: 100% 50%; }
-                100% { background-position: 0% 50%; }
-              }
-              @keyframes fireGlowPulse {
-                0%, 100% { 
-                  box-shadow: 0 0 12px rgba(226, 88, 34, 0.45), 0 0 4px rgba(241, 196, 15, 0.2); 
-                  transform: scale(0.995);
-                }
-                50% { 
-                  box-shadow: 0 0 24px rgba(226, 88, 34, 0.8), 0 0 10px rgba(241, 196, 15, 0.45); 
-                  transform: scale(1.005);
-                }
-              }
-            `}</style>
-
-            {/* Chatbot Card itself */}
-            <div style={{
-              width: '300px',
-              height: '400px',
-              backgroundColor: 'var(--bg-sidebar, #111827)',
-              borderRadius: '20px',
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden',
-              zIndex: 2,
-              boxShadow: 'inset 0 0 20px rgba(239, 68, 68, 0.1)'
-            }}>
-              
-              <div style={{
-                backgroundColor: 'var(--primary-color)',
-                padding: '16px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                color: '#ffffff'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#10B981' }} />
-                  <strong style={{ fontSize: '0.9rem' }}>Feedback Assistant</strong>
-                </div>
-                <button onClick={handleClose} style={{ background: 'none', border: 'none', color: '#ffffff', fontSize: '1.2rem', cursor: 'pointer', lineHeight: 1 }}>×</button>
-              </div>
-
-              <div style={{ flex: 1, padding: '16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '0.85rem' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxWidth: '85%' }}>
-                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 'bold' }}>Assistant</span>
-                  <div style={{ backgroundColor: 'var(--glass-card-bg)', border: '1px solid var(--glass-card-border)', padding: '10px 14px', borderRadius: '14px 14px 14px 0px', color: 'var(--text-primary)' }}>
-                    Hi there! Thank you for choosing <strong>{selectedEnt?.name || 'our store'}</strong>. How would you rate your shopping experience today?
-                  </div>
-                </div>
-
-                {chatbotState === 'welcome' && (
-                  <div 
-                    style={{ display: 'flex', gap: '8px', justifyContent: 'center', margin: '12px 0' }}
-                    onMouseLeave={() => setHoveredRating(0)}
-                  >
-                    {[1, 2, 3, 4, 5].map(rate => (
-                      <button
-                        key={rate}
-                        type="button"
-                        onClick={() => handleRatingSelect(rate)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          padding: 0,
-                          transition: 'transform 0.15s'
-                        }}
-                        onMouseEnter={(e) => {
-                          setHoveredRating(rate);
-                          e.currentTarget.style.transform = 'scale(1.25)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'scale(1)';
-                        }}
-                      >
-                        <StarIcon filled={hoveredRating > 0 ? rate <= hoveredRating : rate <= chatbotRating} size={28} />
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {['comment', 'name', 'submitting', 'finished'].includes(chatbotState) && (
-                  <>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxWidth: '85%', alignSelf: 'flex-end', alignItems: 'flex-end' }}>
-                      <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 'bold' }}>You</span>
-                      <div style={{ backgroundColor: 'var(--primary-color)', padding: '10px 14px', borderRadius: '14px 14px 0px 14px', color: '#ffffff' }}>
-                        I rate it {chatbotRating} / 5 stars.
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxWidth: '85%' }}>
-                      <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 'bold' }}>Assistant</span>
-                      <div style={{ backgroundColor: 'var(--glass-card-bg)', border: '1px solid var(--glass-card-border)', padding: '10px 14px', borderRadius: '14px 14px 14px 0px', color: 'var(--text-primary)' }}>
-                        {chatbotRating >= 4 ? "Awesome! What did you like most about your experience?" : "We're sorry to hear that. What went wrong, and how can we improve?"}
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {chatbotState === 'comment' && (
-                  <form onSubmit={handleCommentSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <textarea
-                      required
-                      placeholder="Type your feedback here..."
-                      value={chatbotComment}
-                      onChange={e => setChatbotComment(e.target.value)}
-                      rows={3}
-                      style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--input-border)', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', outline: 'none', resize: 'none', boxSizing: 'border-box' }}
-                    />
-                    <button
-                      type="submit"
-                      style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', backgroundColor: 'var(--primary-color)', color: '#ffffff', fontWeight: '700', cursor: 'pointer', alignSelf: 'flex-end' }}
-                    >
-                      Next
-                    </button>
-                  </form>
-                )}
-
-                {['name', 'submitting', 'finished'].includes(chatbotState) && (
-                  <>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxWidth: '85%', alignSelf: 'flex-end', alignItems: 'flex-end' }}>
-                      <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 'bold' }}>You</span>
-                      <div style={{ backgroundColor: 'var(--primary-color)', padding: '10px 14px', borderRadius: '14px 14px 0px 14px', color: '#ffffff', wordBreak: 'break-word' }}>
-                        "{chatbotComment}"
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxWidth: '85%' }}>
-                      <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 'bold' }}>Assistant</span>
-                      <div style={{ backgroundColor: 'var(--glass-card-bg)', border: '1px solid var(--glass-card-border)', padding: '10px 14px', borderRadius: '14px 14px 14px 0px', color: 'var(--text-primary)' }}>
-                        Understood! Lastly, what is your name so we can record your review?
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {chatbotState === 'name' && (
-                  <form onSubmit={handleNameSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Enter your name..."
-                      value={chatbotName}
-                      onChange={e => setChatbotName(e.target.value)}
-                      style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--input-border)', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box' }}
-                    />
-                    <button
-                      type="submit"
-                      style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', backgroundColor: 'var(--primary-color)', color: '#ffffff', fontWeight: '700', cursor: 'pointer', alignSelf: 'flex-end' }}
-                    >
-                      Submit Review
-                    </button>
-                  </form>
-                )}
-
-                {chatbotState === 'submitting' && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 0' }}>
-                    <div style={{ width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--primary-color)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                    <span style={{ color: 'var(--text-muted)' }}>Saving feedback to store...</span>
-                  </div>
-                )}
-
-                {chatbotState === 'finished' && (
-                  <>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxWidth: '85%', alignSelf: 'flex-end', alignItems: 'flex-end' }}>
-                      <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 'bold' }}>You</span>
-                      <div style={{ backgroundColor: 'var(--primary-color)', padding: '10px 14px', borderRadius: '14px 14px 0px 14px', color: '#ffffff' }}>
-                        My name is {chatbotName}.
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxWidth: '85%' }}>
-                      <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 'bold' }}>Assistant</span>
-                      <div style={{ backgroundColor: 'var(--glass-card-bg)', border: '1px solid var(--glass-card-border)', padding: '10px 14px', borderRadius: '14px 14px 14px 0px', color: '#10B981', fontWeight: '700' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" style={{ width: '16px', height: '16px', color: '#10B981' }}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                          </svg>
-                          <span>Thank you! Your feedback has been recorded successfully. Have a nice day!</span>
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
 
   const renderTrackDrawer = () => {
     if (!trackDrawerOpen) return null;
@@ -2762,7 +2880,12 @@ export const PublicCatalog = () => {
       </div>
       {renderSimulatedMomoModal()}
       {renderTrackDrawer()}
-      {renderReviewChatbot()}
+      <ReviewChatbot 
+        selectedEntId={selectedEntId} 
+        selectedEnt={selectedEnt} 
+        fetchReviews={fetchReviews} 
+        cartOpen={cartOpen} 
+      />
       {renderAdPopup()}
       {renderDisputeModal()}
 
