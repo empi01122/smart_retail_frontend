@@ -847,11 +847,7 @@ export const Dashboard = () => {
         </div>
 
         {/* 1. KPI Metrics Grid */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '16px'
-        }}>
+        <div className="dashboard-kpi-grid">
           {/* Revenue */}
           <Card title="Total Revenue" style={{ position: 'relative' }}>
             {metricsLoading ? (

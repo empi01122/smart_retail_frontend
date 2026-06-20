@@ -176,11 +176,7 @@ export const Sales = () => {
       </div>
 
       {/* Summary KPI Panel */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '16px'
-      }}>
+      <div className="sales-kpi-grid">
         <Card title="Total Revenue" style={{ padding: '20px' }}>
           <h2 style={{ fontSize: '2rem', color: 'var(--accent-color)', margin: '4px 0 0 0' }}>
             {totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} FCFA

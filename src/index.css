@@ -955,12 +955,32 @@ label {
   }
 }
 
+/* Dashboard and Sales KPI grids */
+.dashboard-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.sales-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
 #printable-receipt-container {
   display: none;
 }
 
 /* --- Global Mobile Responsiveness Overrides --- */
 @media (max-width: 640px) {
+  /* KPI metrics grid responsive adjustments */
+  .dashboard-kpi-grid,
+  .sales-kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
   /* Toggle Category Filters */
   .mobile-category-filter {
     display: block !important;
@@ -1009,8 +1029,8 @@ label {
      ---------------------------------------------------- */
   #products-table tbody {
     display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
-    gap: 12px !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
     width: 100% !important;
   }
 
@@ -1060,6 +1080,22 @@ label {
   #products-table td[data-label="Product Info"] {
     margin-top: 10px !important;
     flex-grow: 1 !important;
+  }
+  #products-table td[data-label="Product Info"] > div {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+  #products-table td[data-label="Product Info"] > div > div:first-child {
+    width: 100% !important;
+    height: 100px !important;
+    border-radius: 8px !important;
+    background-color: rgba(0, 0, 0, 0.2) !important;
+  }
+  #products-table td[data-label="Product Info"] img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
   }
   #products-table td[data-label="Product Info"] h4 {
     font-size: 0.88rem !important;
