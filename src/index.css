@@ -671,6 +671,44 @@ label {
   }
 }
 
+/* POS Storefront Mobile Cart Drawer Overlays */
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.pos-cart-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 10000;
+  opacity: 0;
+  animation: fadeIn 0.2s ease forwards;
+}
+
+.pos-cart-drawer-content {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 85vw;
+  max-width: 440px;
+  background-color: var(--bg-sidebar);
+  border-left: 1px solid var(--border-sidebar);
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+  z-index: 10001;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  animation: slideInFromRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 /* Responsive adjustments for very small screens (native mobile look) */
 @media (max-width: 480px) {
   .mobile-nav-link {

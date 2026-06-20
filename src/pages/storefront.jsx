@@ -237,11 +237,26 @@ export const Storefront = () => {
 
   // Mobile/Tablet responsive view controls
   const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 1024);
-  const [mobileTab, setMobileTab] = useState('catalog'); // 'catalog' or 'cart'
+  const [cartOpen, setCartOpen] = useState(false);
+
+  // Auto-open/close cart drawer for the guided tour steps on mobile
+  useEffect(() => {
+    if (tourActive && isMobileView) {
+      if (currentStepIdx === 2 || currentStepIdx === 3 || currentStepIdx === 4) {
+        setCartOpen(true);
+      } else {
+        setCartOpen(false);
+      }
+    }
+  }, [tourActive, currentStepIdx, isMobileView]);
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobileView(window.innerWidth <= 1024);
+      const isMobile = window.innerWidth <= 1024;
+      setIsMobileView(isMobile);
+      if (!isMobile) {
+        setCartOpen(false);
+      }
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -379,17 +394,7 @@ export const Storefront = () => {
     };
   }, []);
 
-  useEffect(() => {
-    const handleResize = () => {
-      const isMobile = window.innerWidth <= 1024;
-      setIsMobileView(isMobile);
-      if (!isMobile) {
-        setMobileTab('catalog'); // default resetting when scaling up
-      }
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+
 
   const fetchProducts = async () => {
     try {
@@ -876,41 +881,10 @@ export const Storefront = () => {
     <>
       <div className="pos-layout-container animate-fade-in" style={{ flexDirection: isMobileView ? 'column' : 'row' }}>
       
-      {isMobileView && (
-        <div className="pos-mobile-tabs" style={{ position: 'relative' }}>
-          <button
-            className={`pos-mobile-tab ${mobileTab === 'catalog' ? 'active' : ''}`}
-            onClick={() => setMobileTab('catalog')}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-          >
-            <ProductsIcon size={16} /> <span className="pos-mobile-tab-text">Products ({products.length})</span>
-          </button>
-          <button
-            className={`pos-mobile-tab ${mobileTab === 'cart' ? 'active' : ''}`}
-            onClick={() => setMobileTab('cart')}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-          >
-            <CartIcon size={16} /> <span className="pos-mobile-tab-text">Cart Ledger</span> {cart.length > 0 && <span className="cart-badge">{cart.reduce((sum, item) => sum + item.quantity, 0)}</span>}
-          </button>
-          {/* Notification Bell — mobile */}
-          <button
-            onClick={() => setNotifOpen(o => !o)}
-            style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 14px', color: pendingOrders.length > 0 ? '#f59e0b' : 'rgba(255,255,255,0.45)', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: '600' }}
-            title="Online Orders"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '18px', height: '18px' }}><path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>
-            {pendingOrders.length > 0 && (
-              <span style={{ position: 'absolute', top: '4px', right: '8px', width: '18px', height: '18px', borderRadius: '50%', backgroundColor: '#ef4444', color: '#fff', fontSize: '0.65rem', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{pendingOrders.length}</span>
-            )}
-          </button>
-        </div>
-      )}
-
-
       {/* LEFT COLUMN: Catalog / Product Selection (Flexible Grid) */}
       <div style={{
         flex: 1.8,
-        display: (!isMobileView || mobileTab === 'catalog') ? 'flex' : 'none',
+        display: 'flex',
         flexDirection: 'column',
         gap: '12px',
         maxHeight: '100%',
@@ -925,8 +899,10 @@ export const Storefront = () => {
           border: '1px solid rgba(255, 255, 255, 0.05)'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
               <h1 className="pos-terminal-title" style={{ margin: 0 }}>Register Terminal</h1>
+              
+              {/* Help Tour */}
               <button
                 onClick={() => {
                   setTourActive(true);
@@ -961,16 +937,45 @@ export const Storefront = () => {
                 </svg>
                 Help Tour
               </button>
-              {!isMobileView && (
+
+              {/* Online Orders Notifier (both mobile & desktop) */}
+              <button
+                onClick={() => setNotifOpen(o => !o)}
+                style={{
+                  background: pendingOrders.length > 0 ? 'rgba(245,158,11,0.15)' : 'var(--glass-card-bg)',
+                  border: `1px solid ${pendingOrders.length > 0 ? 'rgba(245,158,11,0.4)' : 'var(--glass-card-border)'}`,
+                  borderRadius: '10px',
+                  padding: '6px 12px',
+                  cursor: 'pointer',
+                  color: pendingOrders.length > 0 ? '#f59e0b' : 'var(--text-secondary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '0.8rem',
+                  fontWeight: '600',
+                  transition: 'var(--transition-fast)'
+                }}
+                title="Online Orders"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '16px', height: '16px' }}><path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>
+                {isMobileView ? '' : 'Online Orders'}
+                {pendingOrders.length > 0 && (
+                  <span style={{ backgroundColor: '#ef4444', color: '#fff', borderRadius: '20px', padding: '1px 6px', fontSize: '0.68rem', fontWeight: '800', marginLeft: '6px' }}>{pendingOrders.length}</span>
+                )}
+              </button>
+
+              {/* Mobile Cart toggle button */}
+              {isMobileView && (
                 <button
-                  onClick={() => setNotifOpen(o => !o)}
+                  id="mobile-cart-toggle-btn"
+                  onClick={() => setCartOpen(o => !o)}
                   style={{
-                    background: pendingOrders.length > 0 ? 'rgba(245,158,11,0.15)' : 'var(--glass-card-bg)',
-                    border: `1px solid ${pendingOrders.length > 0 ? 'rgba(245,158,11,0.4)' : 'var(--glass-card-border)'}`,
+                    background: cart.length > 0 ? 'var(--primary-color)' : 'var(--glass-card-bg)',
+                    border: `1px solid ${cart.length > 0 ? 'var(--primary-color)' : 'var(--glass-card-border)'}`,
                     borderRadius: '10px',
-                    padding: '6px 14px',
+                    padding: '6px 12px',
                     cursor: 'pointer',
-                    color: pendingOrders.length > 0 ? '#f59e0b' : 'var(--text-secondary)',
+                    color: cart.length > 0 ? '#fff' : 'var(--text-secondary)',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
@@ -978,12 +983,25 @@ export const Storefront = () => {
                     fontWeight: '600',
                     transition: 'var(--transition-fast)'
                   }}
-                  title="Online Orders"
+                  title="Cart Ledger"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '16px', height: '16px' }}><path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>
-                  Online Orders
-                  {pendingOrders.length > 0 && (
-                    <span style={{ backgroundColor: '#ef4444', color: '#fff', borderRadius: '20px', padding: '1px 6px', fontSize: '0.68rem', fontWeight: '800' }}>{pendingOrders.length}</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '16px', height: '16px' }}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" /></svg>
+                  <span>Cart</span>
+                  {cart.length > 0 && (
+                    <span style={{
+                      backgroundColor: '#ef4444',
+                      color: '#fff',
+                      borderRadius: '50%',
+                      width: '18px',
+                      height: '18px',
+                      fontSize: '0.68rem',
+                      fontWeight: '800',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      {cart.reduce((sum, item) => sum + item.quantity, 0)}
+                    </span>
                   )}
                 </button>
               )}
@@ -1079,7 +1097,7 @@ export const Storefront = () => {
             gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
             gap: '10px',
             overflowY: 'auto',
-            flex: '0 1 auto',
+            flex: 1,
             minHeight: 0,
             paddingRight: '4px'
           }}>
@@ -1233,37 +1251,75 @@ export const Storefront = () => {
       </div>
 
       {/* RIGHT COLUMN: Interactive Shopping Cart (POS Side Drawer) */}
-      <div id="pos-cart-section" style={{
-        flex: 1.1,
-        display: (!isMobileView || mobileTab === 'cart') ? 'flex' : 'none',
-        flexDirection: 'column',
-        minHeight: 0,
-        height: '100%',
-        maxHeight: '100%'
-      }}>
-        <Card
-          title="Shopping Cart"
-          subtitle={isMobileView ? null : "Customer selection ledger"}
-          padding={isMobileView ? '16px' : '24px'}
-          style={{ height: '100%', background: 'var(--bg-sidebar)', border: '1px solid var(--border-sidebar)' }}
-          actions={
-            cart.length > 0 && (
-              <button
-                onClick={clearCart}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: 'var(--text-muted)',
-                  fontSize: '0.8rem',
-                  cursor: 'pointer',
-                  fontWeight: '600'
-                }}
-              >
-                Clear Cart
-              </button>
-            )
-          }
+      {(!isMobileView || cartOpen) && (
+        <div 
+          className={isMobileView ? "pos-cart-drawer-backdrop" : ""} 
+          onClick={isMobileView ? () => setCartOpen(false) : undefined}
         >
+          <div
+            id="pos-cart-section"
+            className={isMobileView ? "pos-cart-drawer-content" : ""}
+            onClick={(e) => isMobileView && e.stopPropagation()}
+            style={!isMobileView ? {
+              flex: 1.1,
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: 0,
+              height: '100%',
+              maxHeight: '100%'
+            } : {
+              display: 'flex',
+              flexDirection: 'column',
+              height: '100%',
+              width: '100%'
+            }}
+          >
+            <Card
+              title="Shopping Cart"
+              subtitle={isMobileView ? null : "Customer selection ledger"}
+              padding={isMobileView ? '16px' : '24px'}
+              style={{ height: '100%', background: 'var(--bg-sidebar)', border: '1px solid var(--border-sidebar)' }}
+              actions={
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  {cart.length > 0 && (
+                    <button
+                      onClick={clearCart}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--text-muted)',
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        fontWeight: '600'
+                      }}
+                    >
+                      Clear Cart
+                    </button>
+                  )}
+                  {isMobileView && (
+                    <button
+                      onClick={() => setCartOpen(false)}
+                      style={{
+                        background: 'rgba(255,255,255,0.05)',
+                        border: 'none',
+                        color: 'var(--text-primary)',
+                        borderRadius: '50%',
+                        width: '28px',
+                        height: '28px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        fontSize: '1.2rem',
+                        lineHeight: 1
+                      }}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              }
+            >
           {checkoutError && (
             <div style={{
               padding: '12px 16px',
@@ -1489,7 +1545,9 @@ export const Storefront = () => {
             </Button>
           </div>
         </Card>
-      </div>
+          </div>
+        </div>
+      )}
 
       {/* RECEIPT POPUP MODAL (Visual Confirmation) */}
       <Modal
