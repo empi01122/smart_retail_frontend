@@ -2373,7 +2373,36 @@ export const PublicCatalog = () => {
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '16px', height: '16px' }}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.5 5.5a7.5 7.5 0 0010.5 10.5z" /></svg>
               </span>
             </div>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {/* Mobile Category Dropdown Select */}
+            <div className="mobile-category-filter">
+              <label htmlFor="mobile-public-category-select" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: '700', marginBottom: '6px', display: 'block' }}>Filter by Category:</label>
+              <select
+                id="mobile-public-category-select"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: '10px',
+                  border: '1px solid var(--input-border)',
+                  backgroundColor: 'var(--input-bg)',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.88rem',
+                  fontWeight: '600',
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                {categories.map(category => (
+                  <option key={category} value={category} style={{ backgroundColor: 'var(--bg-sidebar, #111827)', color: '#fff' }}>
+                    {category === 'All' ? 'All Categories' : category}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Desktop Category Buttons */}
+            <div className="desktop-category-filters">
               {categories.map(cat => (
                 <button key={cat} onClick={() => setSelectedCategory(cat)}
                   style={{ padding: '7px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontSize: '0.82rem', fontWeight: '600', backgroundColor: selectedCategory === cat ? 'var(--primary-color)' : 'var(--glass-card-bg)', color: selectedCategory === cat ? '#fff' : 'var(--text-secondary)', transition: 'all 0.2s', whiteSpace: 'nowrap' }}>

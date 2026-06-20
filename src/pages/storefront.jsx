@@ -1011,8 +1011,35 @@ export const Storefront = () => {
             </div>
           </div>
 
-          {/* Category badges */}
-          <div className="category-scroll-container">
+          {/* Mobile Category Dropdown Select */}
+          <div className="mobile-category-filter">
+            <select
+              id="mobile-storefront-category-select"
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px 14px',
+                borderRadius: '10px',
+                border: '1px solid var(--input-border)',
+                backgroundColor: 'var(--input-bg)',
+                color: 'var(--text-primary)',
+                fontSize: '0.88rem',
+                fontWeight: '600',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              {categories.map(category => (
+                <option key={category} value={category} style={{ backgroundColor: 'var(--bg-sidebar, #111827)', color: '#fff' }}>
+                  {category === 'All' ? 'All Categories' : category}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Desktop Category badges */}
+          <div className="category-scroll-container desktop-category-filters">
             {categories.map(category => (
               <button
                 key={category}

@@ -887,6 +887,16 @@ label {
   display: none !important;
 }
 
+.mobile-category-filter {
+  display: none !important;
+}
+
+.desktop-category-filters {
+  display: flex !important;
+  gap: 8px;
+  overflow-x: auto;
+}
+
 /* Print overrides for popup-free printing and PDF downloading on mobile & desktop */
 @media print {
   body.is-printing-receipt > :not(#printable-receipt-container) {
@@ -913,6 +923,17 @@ label {
 
 /* --- Global Mobile Responsiveness Overrides --- */
 @media (max-width: 640px) {
+  /* Toggle Category Filters */
+  .mobile-category-filter {
+    display: block !important;
+    width: 100% !important;
+    margin-bottom: 12px !important;
+  }
+  
+  .desktop-category-filters {
+    display: none !important;
+  }
+
   /* Shrink default Card padding to maximize content space */
   .glass-panel {
     padding: 12px 16px !important;
@@ -946,11 +967,11 @@ label {
   }
 
   /* ----------------------------------------------------
-     1. PRODUCTS CATALOG TABLE -> Grid of 2-Column Cards
+     1. PRODUCTS CATALOG TABLE -> Grid of Cards
      ---------------------------------------------------- */
   #products-table tbody {
     display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
     gap: 12px !important;
     width: 100% !important;
   }
@@ -1007,12 +1028,16 @@ label {
     line-height: 1.3 !important;
   }
   #products-table td[data-label="Product Info"] p {
-    font-size: 0.72rem !important;
-    display: -webkit-box !important;
-    -webkit-line-clamp: 2 !important;
-    -webkit-box-orient: vertical !important;
-    overflow: hidden !important;
-    height: 2.6em !important;
+    font-size: 0.76rem !important;
+    color: var(--text-muted) !important;
+    margin: 4px 0 0 0 !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+    -webkit-line-clamp: unset !important;
   }
 
   /* Category pill alignment */
@@ -1059,7 +1084,7 @@ label {
   }
 
   /* ----------------------------------------------------
-     2. TRANSACTION LEDGER TABLE -> 2-Column Grid Cards
+     2. TRANSACTION LEDGER TABLE -> Stacked Receipt-like Cards
      ---------------------------------------------------- */
   #sales-table tbody {
     display: grid !important;
@@ -1069,25 +1094,31 @@ label {
   }
 
   #sales-table tr:not(.expanded-details-row) {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 8px 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
     background: rgba(255, 255, 255, 0.02) !important;
     border: 1px solid var(--bg-surface-border) !important;
     border-radius: var(--radius-md) !important;
     padding: 14px !important;
     margin-bottom: 0 !important;
     box-shadow: var(--shadow-sm) !important;
+    gap: 8px !important;
   }
 
   #sales-table td {
     display: flex !important;
-    flex-direction: column !important;
-    align-items: flex-start !important;
-    justify-content: center !important;
-    padding: 0 !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 6px 0 !important;
     border: none !important;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.05) !important;
     text-align: left !important;
+    width: 100% !important;
+  }
+
+  #sales-table td:last-child {
+    border-bottom: none !important;
   }
 
   #sales-table td::before {
@@ -1097,24 +1128,20 @@ label {
     text-transform: uppercase !important;
     font-size: 0.65rem !important;
     letter-spacing: 0.05em !important;
-    margin-bottom: 2px !important;
+    margin-bottom: 0 !important;
   }
 
   #sales-table td[data-label="Transaction ID"] {
-    grid-column: span 2 !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
-    padding-bottom: 8px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    padding-bottom: 10px !important;
     margin-bottom: 4px !important;
   }
   
   #sales-table td[data-label="Details"] {
-    grid-column: span 2 !important;
-    margin-top: 8px !important;
+    margin-top: 4px !important;
   }
   #sales-table td[data-label="Details"] button {
-    width: 100% !important;
-    text-align: center !important;
-    justify-content: center !important;
+    width: auto !important;
   }
 
   /* Expanded Ledger Details Wrapper on Mobile */
@@ -1142,7 +1169,7 @@ label {
   }
 
   /* ----------------------------------------------------
-     3. STAFF ACCOUNTS TABLE -> 2-Column Grid Cards
+     3. STAFF ACCOUNTS TABLE -> Stacked Profile Cards
      ---------------------------------------------------- */
   #staff-table tbody {
     display: grid !important;
@@ -1152,25 +1179,31 @@ label {
   }
 
   #staff-table tr {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 8px 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
     background: rgba(255, 255, 255, 0.02) !important;
     border: 1px solid var(--bg-surface-border) !important;
     border-radius: var(--radius-md) !important;
     padding: 14px !important;
     margin-bottom: 0 !important;
     box-shadow: var(--shadow-sm) !important;
+    gap: 8px !important;
   }
 
   #staff-table td {
     display: flex !important;
-    flex-direction: column !important;
-    align-items: flex-start !important;
-    justify-content: center !important;
-    padding: 0 !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 6px 0 !important;
     border: none !important;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.05) !important;
     text-align: left !important;
+    width: 100% !important;
+  }
+
+  #staff-table td:last-child {
+    border-bottom: none !important;
   }
 
   #staff-table td::before {
@@ -1180,27 +1213,28 @@ label {
     text-transform: uppercase !important;
     font-size: 0.65rem !important;
     letter-spacing: 0.05em !important;
-    margin-bottom: 2px !important;
+    margin-bottom: 0 !important;
   }
 
   #staff-table td[data-label="Profile Details"] {
-    grid-column: span 2 !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
-    padding-bottom: 8px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    padding-bottom: 10px !important;
     margin-bottom: 4px !important;
+    justify-content: flex-start !important;
   }
   #staff-table td[data-label="Profile Details"]::before {
     display: none !important;
   }
 
   #staff-table td[data-label="Actions"] {
-    grid-column: span 2 !important;
-    margin-top: 8px !important;
+    padding-top: 8px !important;
+    justify-content: center !important;
+  }
+  #staff-table td[data-label="Actions"]::before {
+    display: none !important;
   }
   #staff-table td[data-label="Actions"] button {
     width: 100% !important;
-    text-align: center !important;
-    justify-content: center !important;
   }
 }
 
