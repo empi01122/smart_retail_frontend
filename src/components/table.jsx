@@ -11,6 +11,7 @@ export const Table = ({
   return (
     <div
       id={id}
+      className="table-responsive-wrapper"
       style={{
         width: '100%',
         overflowX: 'auto',

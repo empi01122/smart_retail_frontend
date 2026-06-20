@@ -923,7 +923,13 @@ label {
     font-size: 1.4rem !important;
   }
 
-  /* Responsive Stacked Cards Table Layout */
+  /* Disable horizontal scrollbars on the table responsive wrappers */
+  .table-responsive-wrapper {
+    overflow-x: visible !important;
+    border: none !important;
+    width: 100% !important;
+  }
+
   table {
     display: block !important;
     width: 100% !important;
@@ -938,101 +944,263 @@ label {
     display: block !important;
     width: 100% !important;
   }
-  
-  /* Make each row behave like a distinct glass card */
-  tr:not(.expanded-details-row) {
+
+  /* ----------------------------------------------------
+     1. PRODUCTS CATALOG TABLE -> Grid of 2-Column Cards
+     ---------------------------------------------------- */
+  #products-table tbody {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
+    gap: 12px !important;
+    width: 100% !important;
+  }
+
+  #products-table tr {
     display: flex !important;
     flex-direction: column !important;
-    width: 100% !important;
     background: rgba(255, 255, 255, 0.02) !important;
     border: 1px solid var(--bg-surface-border) !important;
     border-radius: var(--radius-md) !important;
-    padding: 12px 14px !important;
-    margin-bottom: 16px !important;
+    padding: 12px !important;
+    margin-bottom: 0 !important;
+    height: 100% !important;
+    position: relative !important;
     box-shadow: var(--shadow-sm) !important;
-    gap: 4px !important;
+    gap: 6px !important;
   }
-  
-  tr:not(.expanded-details-row):last-child {
+
+  #products-table td {
+    display: block !important;
+    padding: 0 !important;
+    border: none !important;
+    text-align: left !important;
+    background: transparent !important;
+    width: 100% !important;
     margin-bottom: 0 !important;
   }
-  
-  /* Style each cell as a flex row with name on left, value on right */
-  tr:not(.expanded-details-row) td[data-label] {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    padding: 8px 0 !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.03) !important;
-    font-size: 0.85rem !important;
-    width: 100% !important;
-    text-align: right !important;
-    background: transparent !important;
+
+  #products-table td::before {
+    display: none !important; /* Hide labels as card layout is self-evident */
   }
-  
-  tr:not(.expanded-details-row) td[data-label]:last-child {
-    border-bottom: none !important;
-    padding-bottom: 0 !important;
-  }
-  
-  tr:not(.expanded-details-row) td[data-label]:first-child {
-    padding-top: 0 !important;
-  }
-  
-  /* Show column name prefix on the left */
-  tr:not(.expanded-details-row) td[data-label]::before {
-    content: attr(data-label) !important;
+
+  /* Product ID Tag */
+  #products-table td[data-label="ID"] {
+    position: absolute !important;
+    top: 8px !important;
+    left: 8px !important;
+    font-size: 0.65rem !important;
     font-weight: 700 !important;
     color: var(--text-secondary) !important;
-    text-transform: uppercase !important;
-    font-size: 0.7rem !important;
-    letter-spacing: 0.05em !important;
-    flex-shrink: 0 !important;
-    text-align: left !important;
+    z-index: 10 !important;
+    background: rgba(0, 0, 0, 0.6) !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
   }
 
-  /* Complex cells (Product Info, Profile Details) wrap vertically to fit name/desc */
-  tr:not(.expanded-details-row) td[data-label="Product Info"],
-  tr:not(.expanded-details-row) td[data-label="Profile Details"] {
+  /* Product Title & Info Column */
+  #products-table td[data-label="Product Info"] {
+    margin-top: 10px !important;
+    flex-grow: 1 !important;
+  }
+  #products-table td[data-label="Product Info"] h4 {
+    font-size: 0.88rem !important;
+    line-height: 1.3 !important;
+  }
+  #products-table td[data-label="Product Info"] p {
+    font-size: 0.72rem !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    height: 2.6em !important;
+  }
+
+  /* Category pill alignment */
+  #products-table td[data-label="Category"] {
+    margin-bottom: 4px !important;
+  }
+  #products-table td[data-label="Category"] span {
+    padding: 2px 8px !important;
+    font-size: 0.68rem !important;
+  }
+
+  /* Price styling */
+  #products-table td[data-label="Price"] {
+    font-size: 0.88rem !important;
+    font-weight: 800 !important;
+    color: var(--accent-color) !important;
+    margin-bottom: 4px !important;
+  }
+
+  /* Stock Level Indicator */
+  #products-table td[data-label="Stock Level"] {
+    margin-bottom: 10px !important;
+  }
+  #products-table td[data-label="Stock Level"] > div {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Actions layout inside card */
+  #products-table td[data-label="Actions"] {
+    margin-top: auto !important;
+  }
+  #products-table td[data-label="Actions"] > div {
+    display: flex !important;
+    gap: 6px !important;
+    width: 100% !important;
+  }
+  #products-table td[data-label="Actions"] button {
+    flex: 1 !important;
+    padding: 6px 0 !important;
+    font-size: 0.75rem !important;
+    text-align: center !important;
+    justify-content: center !important;
+  }
+
+  /* ----------------------------------------------------
+     2. TRANSACTION LEDGER TABLE -> 2-Column Grid Cards
+     ---------------------------------------------------- */
+  #sales-table tbody {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+    gap: 12px !important;
+    width: 100% !important;
+  }
+
+  #sales-table tr:not(.expanded-details-row) {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px 12px !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid var(--bg-surface-border) !important;
+    border-radius: var(--radius-md) !important;
+    padding: 14px !important;
+    margin-bottom: 0 !important;
+    box-shadow: var(--shadow-sm) !important;
+  }
+
+  #sales-table td {
+    display: flex !important;
     flex-direction: column !important;
     align-items: flex-start !important;
-    gap: 8px !important;
-    text-align: left !important;
-  }
-  
-  tr:not(.expanded-details-row) td[data-label="Product Info"]::before,
-  tr:not(.expanded-details-row) td[data-label="Profile Details"]::before {
-    margin-bottom: 2px !important;
-  }
-  
-  tr:not(.expanded-details-row) td[data-label="Product Info"] > div,
-  tr:not(.expanded-details-row) td[data-label="Profile Details"] > div {
-    width: 100% !important;
-    justify-content: flex-start !important;
-  }
-
-  /* Handle details collapse-expansion rows cleanly */
-  tr.expanded-details-row {
-    display: block !important;
-    width: 100% !important;
-    background-color: var(--bg-app) !important;
-    border: 1px solid var(--border-sidebar) !important;
-    border-radius: var(--radius-md) !important;
-    padding: 12px 16px !important;
-    margin-bottom: 16px !important;
-    margin-top: -12px !important; /* pull closer to parent card */
-  }
-  
-  tr.expanded-details-row td {
-    display: block !important;
-    width: 100% !important;
+    justify-content: center !important;
     padding: 0 !important;
     border: none !important;
     text-align: left !important;
   }
+
+  #sales-table td::before {
+    content: attr(data-label) !important;
+    font-weight: 700 !important;
+    color: var(--text-secondary) !important;
+    text-transform: uppercase !important;
+    font-size: 0.65rem !important;
+    letter-spacing: 0.05em !important;
+    margin-bottom: 2px !important;
+  }
+
+  #sales-table td[data-label="Transaction ID"] {
+    grid-column: span 2 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    padding-bottom: 8px !important;
+    margin-bottom: 4px !important;
+  }
   
-  tr.expanded-details-row td::before {
+  #sales-table td[data-label="Details"] {
+    grid-column: span 2 !important;
+    margin-top: 8px !important;
+  }
+  #sales-table td[data-label="Details"] button {
+    width: 100% !important;
+    text-align: center !important;
+    justify-content: center !important;
+  }
+
+  /* Expanded Ledger Details Wrapper on Mobile */
+  #sales-table tr.expanded-details-row {
+    grid-column: 1 / -1 !important; /* stretch to span both grid columns */
+    display: block !important;
+    background-color: var(--bg-app) !important;
+    border: 1px solid var(--border-sidebar) !important;
+    border-radius: var(--radius-md) !important;
+    padding: 12px 14px !important;
+    margin-top: -6px !important;
+    margin-bottom: 12px !important;
+  }
+  #sales-table tr.expanded-details-row td {
+    display: block !important;
+    width: 100% !important;
+    padding: 0 !important;
+    border: none !important;
+  }
+  #sales-table tr.expanded-details-row td::before {
     display: none !important;
+  }
+  #sales-table tr.expanded-details-row td > div {
+    gap: 16px !important;
+  }
+
+  /* ----------------------------------------------------
+     3. STAFF ACCOUNTS TABLE -> 2-Column Grid Cards
+     ---------------------------------------------------- */
+  #staff-table tbody {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+    gap: 12px !important;
+    width: 100% !important;
+  }
+
+  #staff-table tr {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px 12px !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid var(--bg-surface-border) !important;
+    border-radius: var(--radius-md) !important;
+    padding: 14px !important;
+    margin-bottom: 0 !important;
+    box-shadow: var(--shadow-sm) !important;
+  }
+
+  #staff-table td {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    border: none !important;
+    text-align: left !important;
+  }
+
+  #staff-table td::before {
+    content: attr(data-label) !important;
+    font-weight: 700 !important;
+    color: var(--text-secondary) !important;
+    text-transform: uppercase !important;
+    font-size: 0.65rem !important;
+    letter-spacing: 0.05em !important;
+    margin-bottom: 2px !important;
+  }
+
+  #staff-table td[data-label="Profile Details"] {
+    grid-column: span 2 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    padding-bottom: 8px !important;
+    margin-bottom: 4px !important;
+  }
+  #staff-table td[data-label="Profile Details"]::before {
+    display: none !important;
+  }
+
+  #staff-table td[data-label="Actions"] {
+    grid-column: span 2 !important;
+    margin-top: 8px !important;
+  }
+  #staff-table td[data-label="Actions"] button {
+    width: 100% !important;
+    text-align: center !important;
+    justify-content: center !important;
   }
 }
 

@@ -213,6 +213,7 @@ export const Sales = () => {
       {/* Transaction Logs Table */}
       <Card padding="0px" style={{ overflow: 'hidden' }}>
         <Table
+          id="sales-table"
           headers={['Transaction ID', 'Timestamp', 'Items Sold', 'Gross Total', 'Details']}
           loading={loading}
           emptyMessage="No sales transactions recorded yet."

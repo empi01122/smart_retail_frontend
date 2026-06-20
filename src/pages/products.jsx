@@ -348,6 +348,7 @@ export const Products = () => {
       {/* Catalog Table */}
       <Card padding="0px" style={{ overflow: 'hidden' }}>
         <Table
+          id="products-table"
           headers={
             canManage 
               ? ['ID', 'Product Info', 'Category', 'Price', 'Stock Level', 'Actions']

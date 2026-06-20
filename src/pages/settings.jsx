@@ -1023,6 +1023,7 @@ export const Settings = () => {
           <div style={{ flex: 1.3, minWidth: 'min(280px, 100%)' }}>
             <Card title="Authorized Staff Members" subtitle="Profiles linked and pre-authorized to access this terminal.">
               <Table
+                id="staff-table"
                 headers={['Profile Details', 'Role', 'Status', 'Actions']}
                 loading={staffLoading}
                 emptyMessage="No staff profiles authorized yet."
