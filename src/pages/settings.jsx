@@ -1041,7 +1041,7 @@ export const Settings = () => {
                       className="table-row-hover"
                     >
                       {/* Name & Email details with avatar */}
-                      <td style={{ padding: '16px 20px' }}>
+                      <td data-label="Profile Details" style={{ padding: '16px 20px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <div style={{
                             width: '36px',
@@ -1072,7 +1072,7 @@ export const Settings = () => {
                       </td>
 
                       {/* Role Badge */}
-                      <td style={{ padding: '16px 20px' }}>
+                      <td data-label="Role" style={{ padding: '16px 20px' }}>
                         <span style={{
                           display: 'inline-flex',
                           padding: '2px 8px',
@@ -1089,7 +1089,7 @@ export const Settings = () => {
                       </td>
 
                       {/* Status indicator */}
-                      <td style={{ padding: '16px 20px' }}>
+                      <td data-label="Status" style={{ padding: '16px 20px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <div style={{
                             width: '8px',
@@ -1105,7 +1105,7 @@ export const Settings = () => {
                       </td>
 
                       {/* Deletion triggers */}
-                      <td style={{ padding: '16px 20px' }}>
+                      <td data-label="Actions" style={{ padding: '16px 20px' }}>
                         {staff.id !== loggedInUser?.id ? (
                           <Button
                             id={`revoke-staff-${staff.id}`}

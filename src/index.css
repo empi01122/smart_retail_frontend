@@ -257,12 +257,16 @@ label {
   padding: 30px;
   margin-left: 260px; /* Width of the sidebar */
   transition: var(--transition-smooth);
+  min-width: 0;
+  max-width: 100%;
 }
 
 @media (max-width: 1024px) {
   .main-content {
     margin-left: 210px !important; /* Responsive sidebar width + gap */
     padding: 20px;
+    min-width: 0;
+    max-width: 100%;
   }
 }
 
@@ -273,6 +277,8 @@ label {
     padding-top: 70px !important; /* Spacer for top navbar in mobile (60px header + 10px gap) */
     padding-bottom: 70px !important; /* Spacer for bottom navbar in mobile (60px nav + 10px gap) */
     min-height: calc(100vh - 140px);
+    min-width: 0;
+    max-width: 100%;
   }
 }
 
@@ -907,12 +913,6 @@ label {
 
 /* --- Global Mobile Responsiveness Overrides --- */
 @media (max-width: 640px) {
-  /* Reduce table cell padding to prevent layout blowout */
-  th, td {
-    padding: 8px 10px !important;
-    font-size: 0.8rem !important;
-  }
-  
   /* Shrink default Card padding to maximize content space */
   .glass-panel {
     padding: 12px 16px !important;
@@ -921,6 +921,118 @@ label {
   /* Shrink oversized card metrics font-sizes to prevent wrapping */
   .glass-panel h2 {
     font-size: 1.4rem !important;
+  }
+
+  /* Responsive Stacked Cards Table Layout */
+  table {
+    display: block !important;
+    width: 100% !important;
+    border: none !important;
+  }
+  
+  thead {
+    display: none !important;
+  }
+  
+  tbody {
+    display: block !important;
+    width: 100% !important;
+  }
+  
+  /* Make each row behave like a distinct glass card */
+  tr:not(.expanded-details-row) {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid var(--bg-surface-border) !important;
+    border-radius: var(--radius-md) !important;
+    padding: 12px 14px !important;
+    margin-bottom: 16px !important;
+    box-shadow: var(--shadow-sm) !important;
+    gap: 4px !important;
+  }
+  
+  tr:not(.expanded-details-row):last-child {
+    margin-bottom: 0 !important;
+  }
+  
+  /* Style each cell as a flex row with name on left, value on right */
+  tr:not(.expanded-details-row) td[data-label] {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 8px 0 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03) !important;
+    font-size: 0.85rem !important;
+    width: 100% !important;
+    text-align: right !important;
+    background: transparent !important;
+  }
+  
+  tr:not(.expanded-details-row) td[data-label]:last-child {
+    border-bottom: none !important;
+    padding-bottom: 0 !important;
+  }
+  
+  tr:not(.expanded-details-row) td[data-label]:first-child {
+    padding-top: 0 !important;
+  }
+  
+  /* Show column name prefix on the left */
+  tr:not(.expanded-details-row) td[data-label]::before {
+    content: attr(data-label) !important;
+    font-weight: 700 !important;
+    color: var(--text-secondary) !important;
+    text-transform: uppercase !important;
+    font-size: 0.7rem !important;
+    letter-spacing: 0.05em !important;
+    flex-shrink: 0 !important;
+    text-align: left !important;
+  }
+
+  /* Complex cells (Product Info, Profile Details) wrap vertically to fit name/desc */
+  tr:not(.expanded-details-row) td[data-label="Product Info"],
+  tr:not(.expanded-details-row) td[data-label="Profile Details"] {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+    text-align: left !important;
+  }
+  
+  tr:not(.expanded-details-row) td[data-label="Product Info"]::before,
+  tr:not(.expanded-details-row) td[data-label="Profile Details"]::before {
+    margin-bottom: 2px !important;
+  }
+  
+  tr:not(.expanded-details-row) td[data-label="Product Info"] > div,
+  tr:not(.expanded-details-row) td[data-label="Profile Details"] > div {
+    width: 100% !important;
+    justify-content: flex-start !important;
+  }
+
+  /* Handle details collapse-expansion rows cleanly */
+  tr.expanded-details-row {
+    display: block !important;
+    width: 100% !important;
+    background-color: var(--bg-app) !important;
+    border: 1px solid var(--border-sidebar) !important;
+    border-radius: var(--radius-md) !important;
+    padding: 12px 16px !important;
+    margin-bottom: 16px !important;
+    margin-top: -12px !important; /* pull closer to parent card */
+  }
+  
+  tr.expanded-details-row td {
+    display: block !important;
+    width: 100% !important;
+    padding: 0 !important;
+    border: none !important;
+    text-align: left !important;
+  }
+  
+  tr.expanded-details-row td::before {
+    display: none !important;
   }
 }
 

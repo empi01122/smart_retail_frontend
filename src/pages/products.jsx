@@ -367,12 +367,12 @@ export const Products = () => {
               className="table-row-hover"
             >
               {/* ID */}
-              <td style={{ padding: '16px 20px', color: 'var(--text-muted)', fontWeight: '600' }}>
+              <td data-label="ID" style={{ padding: '16px 20px', color: 'var(--text-muted)', fontWeight: '600' }}>
                 #{product.id}
               </td>
 
               {/* Product Info */}
-              <td style={{ padding: '16px 20px' }}>
+              <td data-label="Product Info" style={{ padding: '16px 20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <div style={{
                     width: '40px',
@@ -408,7 +408,7 @@ export const Products = () => {
               </td>
 
               {/* Category */}
-              <td style={{ padding: '16px 20px' }}>
+              <td data-label="Category" style={{ padding: '16px 20px' }}>
                 {product.category ? (
                   <span style={{
                     padding: '3px 10px',
@@ -426,18 +426,18 @@ export const Products = () => {
               </td>
 
               {/* Price */}
-              <td style={{ padding: '16px 20px', fontWeight: '800', color: 'var(--text-primary)', fontSize: '0.95rem' }}>
+              <td data-label="Price" style={{ padding: '16px 20px', fontWeight: '800', color: 'var(--text-primary)', fontSize: '0.95rem' }}>
                 {product.price.toFixed(2)} FCFA
               </td>
 
               {/* Stock Progress bar */}
-              <td style={{ padding: '16px 20px' }}>
+              <td data-label="Stock Level" style={{ padding: '16px 20px' }}>
                 {renderStockProgress(product.stock)}
               </td>
 
               {/* Actions (Staff Only) */}
               {canManage && (
-                <td style={{ padding: '16px 20px' }}>
+                <td data-label="Actions" style={{ padding: '16px 20px' }}>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <Button
                       id={`edit-btn-${product.id}`}

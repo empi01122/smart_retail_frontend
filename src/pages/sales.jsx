@@ -235,8 +235,8 @@ export const Sales = () => {
                   }}
                   className="table-row-hover"
                 >
-                   {/* ID & Payment Method Icon */}
-                  <td style={{ padding: '16px 20px', fontWeight: '700', color: 'var(--text-secondary)' }}>
+                  {/* ID & Payment Method Icon */}
+                  <td data-label="Transaction ID" style={{ padding: '16px 20px', fontWeight: '700', color: 'var(--text-secondary)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span>#{sale.id}</span>
                       {sale.payment_method === 'mobile_money' ? (
@@ -248,22 +248,22 @@ export const Sales = () => {
                   </td>
 
                   {/* Timestamp */}
-                  <td style={{ padding: '16px 20px', color: 'var(--text-primary)' }}>
+                  <td data-label="Timestamp" style={{ padding: '16px 20px', color: 'var(--text-primary)' }}>
                     {new Date(sale.created_at).toLocaleString()}
                   </td>
 
                   {/* Items Count */}
-                  <td style={{ padding: '16px 20px', color: 'var(--text-primary)', fontWeight: '500' }}>
+                  <td data-label="Items Sold" style={{ padding: '16px 20px', color: 'var(--text-primary)', fontWeight: '500' }}>
                     {itemsCount} {itemsCount === 1 ? 'item' : 'items'}
                   </td>
 
                   {/* Gross Total */}
-                  <td style={{ padding: '16px 20px', fontWeight: '800', color: 'var(--accent-color)' }}>
+                  <td data-label="Gross Total" style={{ padding: '16px 20px', fontWeight: '800', color: 'var(--accent-color)' }}>
                     {sale.total_amount.toFixed(2)} FCFA
                   </td>
 
                   {/* Inspect Details Button */}
-                  <td style={{ padding: '16px 20px' }}>
+                  <td data-label="Details" style={{ padding: '16px 20px' }}>
                     <Button
                       id={`expand-sale-${sale.id}`}
                       variant="secondary"
@@ -280,7 +280,7 @@ export const Sales = () => {
 
                 {/* Expanded Details Row */}
                 {isExpanded && (
-                  <tr>
+                  <tr className="expanded-details-row">
                     <td colSpan={5} style={{
                       backgroundColor: 'var(--bg-app)',
                       padding: '24px 40px',
