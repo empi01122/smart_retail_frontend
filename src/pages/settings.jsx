@@ -1020,7 +1020,7 @@ export const Settings = () => {
           </div>
 
           {/* Staff List Table */}
-          <div style={{ flex: 1.3, minWidth: 'min(350px, 100%)' }}>
+          <div style={{ flex: 1.3, minWidth: 'min(280px, 100%)' }}>
             <Card title="Authorized Staff Members" subtitle="Profiles linked and pre-authorized to access this terminal.">
               <Table
                 headers={['Profile Details', 'Role', 'Status', 'Actions']}

@@ -926,7 +926,7 @@ export const Dashboard = () => {
         <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
           
           {/* Left Side: Top Products List */}
-          <div style={{ flex: 1, minWidth: 'min(300px, 100%)' }}>
+          <div style={{ flex: 1, minWidth: 'min(280px, 100%)' }}>
             <Card
               title={
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
@@ -988,7 +988,7 @@ export const Dashboard = () => {
 
           {/* Middle Side: Predictive Stock Forecasting (Ultra Only) */}
           {tier === 'ultra' && (
-            <div style={{ flex: 1, minWidth: 'min(300px, 100%)' }}>
+            <div style={{ flex: 1, minWidth: 'min(280px, 100%)' }}>
               <Card
                 title={
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
@@ -1051,7 +1051,7 @@ export const Dashboard = () => {
           )}
 
           {/* Right Side: Gemini AI Business insights report */}
-          <div style={{ flex: 1.3, minWidth: 'min(350px, 100%)' }}>
+          <div style={{ flex: 1.3, minWidth: 'min(280px, 100%)' }}>
             <Card
               title={
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
@@ -1203,11 +1203,10 @@ export const Dashboard = () => {
           zIndex: 10,
           padding: '24px'
         }}>
-          <div style={{
+          <div className="premium-lock-box" style={{
             backgroundColor: 'var(--bg-sidebar, #111827)',
             border: '1px solid var(--border-sidebar, rgba(255, 255, 255, 0.1))',
             borderRadius: '24px',
-            padding: '40px 32px',
             maxWidth: '500px',
             width: '100%',
             textAlign: 'center',

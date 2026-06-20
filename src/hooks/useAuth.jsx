@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }) => {
     let active = true;
 
     // Reset hasNoAccess if Clerk is loaded but not signed in (and not bypassed)
-    if (clerkAuth.isLoaded && !clerkAuth.isSignedIn && !isBypass) {
+    if (clerkAuth.isLoaded && !clerkAuth.userId && !isBypass) {
       setHasNoAccess(false);
     }
 
@@ -52,7 +52,7 @@ export const AuthProvider = ({ children }) => {
       try {
         // If Clerk is loaded and the user IS signed in, always use the real token
         // regardless of any stale bypass flag in localStorage
-        if (clerkAuth.isLoaded && clerkAuth.isSignedIn) {
+        if (clerkAuth.isLoaded && !!clerkAuth.userId) {
           if (isBypass) {
             // Clear stale bypass — real Clerk session takes priority
             localStorage.removeItem('auth_bypass');
@@ -82,7 +82,7 @@ export const AuthProvider = ({ children }) => {
             setHasNoAccess(false);
           }
 
-        } else if (clerkAuth.isLoaded && !clerkAuth.isSignedIn) {
+        } else if (clerkAuth.isLoaded && !clerkAuth.userId) {
           // Not logged in at all
           setAuthToken(null);
           if (active) {
@@ -115,7 +115,7 @@ export const AuthProvider = ({ children }) => {
     syncAuth();
 
     return () => { active = false; };
-  }, [isBypass, clerkAuth.isLoaded, clerkAuth.isSignedIn]);
+  }, [isBypass, clerkAuth.isLoaded, clerkAuth.userId]);
 
   const value = {
     isAuthenticated: !!dbUser,
