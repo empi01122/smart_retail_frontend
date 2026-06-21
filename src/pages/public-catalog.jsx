@@ -192,6 +192,50 @@ const TOUR_STEPS = [
   }
 ];
 
+const ChatbotCommentForm = ({ onSubmit, defaultValue }) => {
+  const [comment, setComment] = useState(defaultValue || '');
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); if (comment.trim()) onSubmit(comment.trim()); }} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <textarea
+        required
+        placeholder="Type your feedback here..."
+        value={comment}
+        onChange={e => setComment(e.target.value)}
+        rows={3}
+        style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--input-border)', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', outline: 'none', resize: 'none', boxSizing: 'border-box' }}
+      />
+      <button
+        type="submit"
+        style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', backgroundColor: 'var(--primary-color)', color: '#ffffff', fontWeight: '700', cursor: 'pointer', alignSelf: 'flex-end' }}
+      >
+        Next
+      </button>
+    </form>
+  );
+};
+
+const ChatbotNameForm = ({ onSubmit, defaultValue }) => {
+  const [name, setName] = useState(defaultValue || '');
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); if (name.trim()) onSubmit(name.trim()); }} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <input
+        type="text"
+        required
+        placeholder="Enter your name..."
+        value={name}
+        onChange={e => setName(e.target.value)}
+        style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--input-border)', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box' }}
+      />
+      <button
+        type="submit"
+        style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', backgroundColor: 'var(--primary-color)', color: '#ffffff', fontWeight: '700', cursor: 'pointer', alignSelf: 'flex-end' }}
+      >
+        Submit Review
+      </button>
+    </form>
+  );
+};
+
 const ReviewChatbot = ({ selectedEntId, selectedEnt, fetchReviews, cartOpen }) => {
   const [chatbotOpen, setChatbotOpen] = useState(false);
   const [chatbotState, setChatbotState] = useState('welcome'); // welcome | comment | name | submitting | finished
@@ -215,36 +259,6 @@ const ReviewChatbot = ({ selectedEntId, selectedEnt, fetchReviews, cartOpen }) =
     setChatbotState('comment');
   };
 
-  const handleCommentSubmit = (e) => {
-    e.preventDefault();
-    if (!chatbotComment.trim()) return;
-    if (isGibberish(chatbotComment)) {
-      alert("Please share a meaningful sentence about your experience!");
-      return;
-    }
-    setChatbotState('name');
-  };
-
-  const handleNameSubmit = async (e) => {
-    e.preventDefault();
-    if (!chatbotName.trim()) return;
-    
-    setChatbotState('submitting');
-    try {
-      await axios.post(`${API_BASE}/enterprises/${selectedEntId}/reviews`, {
-        customer_name: chatbotName.trim(),
-        rating: chatbotRating,
-        comment: chatbotComment.trim()
-      });
-      setChatbotState('finished');
-      fetchReviews();
-    } catch (err) {
-      console.error("Failed to submit review:", err);
-      alert("Failed to submit review. Please try again.");
-      setChatbotState('comment');
-    }
-  };
-
   return (
     <div style={{
       position: 'fixed',
@@ -257,6 +271,7 @@ const ReviewChatbot = ({ selectedEntId, selectedEnt, fetchReviews, cartOpen }) =
       {!chatbotOpen && (
         <button
           id="customer-review-btn"
+          className="catalog-chatbot-launcher"
           onClick={() => setChatbotOpen(true)}
           style={{
             padding: '12px 20px',
@@ -284,7 +299,7 @@ const ReviewChatbot = ({ selectedEntId, selectedEnt, fetchReviews, cartOpen }) =
       )}
 
       {chatbotOpen && (
-        <div style={{
+        <div className="catalog-chatbot-window" style={{
           position: 'relative',
           width: '350px',
           height: '450px',
@@ -570,22 +585,13 @@ const ReviewChatbot = ({ selectedEntId, selectedEnt, fetchReviews, cartOpen }) =
               )}
 
               {chatbotState === 'comment' && (
-                <form onSubmit={handleCommentSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <textarea
-                    required
-                    placeholder="Type your feedback here..."
-                    value={chatbotComment}
-                    onChange={e => setChatbotComment(e.target.value)}
-                    rows={3}
-                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--input-border)', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', outline: 'none', resize: 'none', boxSizing: 'border-box' }}
-                  />
-                  <button
-                    type="submit"
-                    style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', backgroundColor: 'var(--primary-color)', color: '#ffffff', fontWeight: '700', cursor: 'pointer', alignSelf: 'flex-end' }}
-                  >
-                    Next
-                  </button>
-                </form>
+                <ChatbotCommentForm
+                  defaultValue={chatbotComment}
+                  onSubmit={(comment) => {
+                    setChatbotComment(comment);
+                    setChatbotState('name');
+                  }}
+                />
               )}
 
               {['name', 'submitting', 'finished'].includes(chatbotState) && (
@@ -607,22 +613,26 @@ const ReviewChatbot = ({ selectedEntId, selectedEnt, fetchReviews, cartOpen }) =
               )}
 
               {chatbotState === 'name' && (
-                <form onSubmit={handleNameSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Enter your name..."
-                    value={chatbotName}
-                    onChange={e => setChatbotName(e.target.value)}
-                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--input-border)', backgroundColor: 'var(--input-bg)', color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box' }}
-                  />
-                  <button
-                    type="submit"
-                    style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', backgroundColor: 'var(--primary-color)', color: '#ffffff', fontWeight: '700', cursor: 'pointer', alignSelf: 'flex-end' }}
-                  >
-                    Submit Review
-                  </button>
-                </form>
+                <ChatbotNameForm
+                  defaultValue={chatbotName}
+                  onSubmit={async (name) => {
+                    setChatbotName(name);
+                    setChatbotState('submitting');
+                    try {
+                      await axios.post(`${API_BASE}/enterprises/${selectedEntId}/reviews`, {
+                        customer_name: name.trim(),
+                        rating: chatbotRating,
+                        comment: chatbotComment.trim()
+                      });
+                      setChatbotState('finished');
+                      fetchReviews();
+                    } catch (err) {
+                      console.error("Failed to submit review:", err);
+                      alert("Failed to submit review. Please try again.");
+                      setChatbotState('name');
+                    }
+                  }}
+                />
               )}
 
               {chatbotState === 'submitting' && (
@@ -702,12 +712,32 @@ export const PublicCatalog = () => {
         el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
         setTimeout(() => {
           const updatedRect = el.getBoundingClientRect();
+          let leftVal = updatedRect.left - 8;
+          let topVal = updatedRect.top - 8;
+          let widthVal = updatedRect.width + 16;
+          let heightVal = updatedRect.height + 16;
+          
+          if (leftVal < 0) {
+            widthVal += leftVal;
+            leftVal = 0;
+          }
+          if (leftVal + widthVal > window.innerWidth) {
+            widthVal = window.innerWidth - leftVal;
+          }
+          if (topVal < 0) {
+            heightVal += topVal;
+            topVal = 0;
+          }
+          if (topVal + heightVal > window.innerHeight) {
+            heightVal = window.innerHeight - topVal;
+          }
+
           setHighlightStyle({
             position: 'fixed',
-            left: `${updatedRect.left - 8}px`,
-            top: `${updatedRect.top - 8}px`,
-            width: `${updatedRect.width + 16}px`,
-            height: `${updatedRect.height + 16}px`,
+            left: `${leftVal}px`,
+            top: `${topVal}px`,
+            width: `${widthVal}px`,
+            height: `${heightVal}px`,
             borderRadius: '12px',
             boxShadow: '0 0 0 9999px rgba(15, 23, 42, 0.75)',
             zIndex: 100000,
@@ -744,6 +774,14 @@ export const PublicCatalog = () => {
       color: 'var(--text-primary)',
       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
     };
+
+    if (window.innerWidth <= 640) {
+      styles.bottom = '24px';
+      styles.left = '50%';
+      styles.transform = 'translateX(-50%)';
+      styles.top = 'auto';
+      return styles;
+    }
 
     if (step.position === 'bottom') {
       styles.top = `${rect.bottom + margin}px`;
@@ -971,7 +1009,7 @@ export const PublicCatalog = () => {
         {/* Backdrop */}
         <div onClick={handleCloseTracker} style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(3px)' }} />
         {/* Drawer Panel */}
-        <div style={{
+        <div className="catalog-track-drawer" style={{
           position: 'absolute',
           top: '24px',
           right: '24px',
@@ -1192,7 +1230,7 @@ export const PublicCatalog = () => {
     else if (adEnterprise.id === 3) adDesc = "Browse Enterprise Gamma for precision gaming mice, mechanical keyboards, and fast-charging tech accessories!";
 
     return (
-      <div style={{
+      <div className="catalog-ad-popup" style={{
         position: 'fixed',
         bottom: '24px',
         left: '50%',
@@ -1944,7 +1982,7 @@ export const PublicCatalog = () => {
     return (
       <>
         {isActualTechnician && renderTechConsole()}
-        <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-app, #0f172a)', color: 'var(--text-primary, #ffffff)', fontFamily: 'Inter, system-ui, sans-serif', padding: '40px 20px' }}>
+        <div className="catalog-checkout-shell" style={{ minHeight: '100vh', backgroundColor: 'var(--bg-app, #0f172a)', color: 'var(--text-primary, #ffffff)', fontFamily: 'Inter, system-ui, sans-serif', padding: '40px 20px' }}>
           <div style={{ maxWidth: '560px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
             <button onClick={() => setStep('browse')} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', padding: 0 }}>
@@ -2364,37 +2402,44 @@ export const PublicCatalog = () => {
   return (
     <>
       {isActualTechnician && renderTechConsole()}
-      <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-app, #0f172a)', color: 'var(--text-primary, #ffffff)', fontFamily: 'Inter, system-ui, sans-serif', transition: 'background-color 0.5s ease', padding: '40px 20px' }}>
+      <div className="catalog-page-shell" style={{ minHeight: '100vh', backgroundColor: 'var(--bg-app, #0f172a)', color: 'var(--text-primary, #ffffff)', fontFamily: 'Inter, system-ui, sans-serif', transition: 'background-color 0.5s ease' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px' }}>
 
           {/* Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', borderBottom: '1px solid var(--bg-surface-border)', paddingBottom: '24px' }}>
+          <div className="catalog-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', borderBottom: '1px solid var(--bg-surface-border)', paddingBottom: '24px' }}>
             <div id="customer-brand-header" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              {selectedEnt?.logo_url && (
-                <div style={{
-                  width: '64px',
-                  height: '64px',
-                  borderRadius: '14px',
-                  backgroundColor: 'transparent',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  overflow: 'hidden',
-                  border: '1px solid var(--bg-surface-border)',
-                  flexShrink: 0
-                }}>
+              <div style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '14px',
+                backgroundColor: selectedEnt?.logo_url ? 'transparent' : 'var(--primary-color)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+                border: selectedEnt?.logo_url ? '1px solid var(--bg-surface-border)' : 'none',
+                boxShadow: selectedEnt?.logo_url ? 'none' : '0 4px 15px rgba(var(--primary-color-rgb, 79, 70, 229), 0.4)',
+                color: '#ffffff',
+                fontWeight: '800',
+                fontSize: '1.6rem',
+                textTransform: 'uppercase',
+                flexShrink: 0
+              }}>
+                {selectedEnt?.logo_url ? (
                   <img src={selectedEnt.logo_url} alt={selectedEnt.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                </div>
-              )}
+                ) : (
+                  (selectedEnt?.name || 'S').charAt(0)
+                )}
+              </div>
               <div>
-                <h1 style={{ fontSize: '2.2rem', fontWeight: '800', margin: '0 0 4px 0', color: 'var(--text-primary)' }}>
+                <h1 className="catalog-brand-title" style={{ fontSize: '2.2rem', fontWeight: '800', margin: '0 0 4px 0', color: 'var(--text-primary)' }}>
                   {selectedEnt?.name || 'Shop Online'}
                 </h1>
                 <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Browse, add to cart, and order for delivery — payment secured.</p>
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+            <div className="catalog-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
               {/* Help Tour button */}
               <button
                 onClick={() => {
@@ -2478,7 +2523,7 @@ export const PublicCatalog = () => {
           </div>
 
           {/* Search & Filters */}
-          <div id="customer-search-filters" style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center', backgroundColor: 'var(--bg-surface)', border: '1px solid var(--bg-surface-border)', borderRadius: '16px', padding: '16px' }}>
+          <div id="customer-search-filters" className="catalog-search-filters" style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center', backgroundColor: 'var(--bg-surface)', border: '1px solid var(--bg-surface-border)', borderRadius: '16px', padding: '16px' }}>
             <div style={{ position: 'relative', flex: 1, minWidth: '260px' }}>
               <input
                 type="text"
@@ -2532,7 +2577,7 @@ export const PublicCatalog = () => {
 
           {/* Products Grid */}
           {loading ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '24px' }}>
+            <div className="catalog-product-grid">
               {[1,2,3,4].map(i => <div key={i} style={{ height: '320px', borderRadius: '16px', backgroundColor: 'var(--glass-card-bg)', border: '1px solid var(--glass-card-border)' }} className="shimmer-bg" />)}
             </div>
           ) : error ? (
@@ -2544,7 +2589,7 @@ export const PublicCatalog = () => {
               <CartIcon size={48} style={{ color: 'var(--text-muted)' }} /><p style={{ margin: 0 }}>No products match your search.</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '24px' }}>
+            <div className="catalog-product-grid">
               {filteredProducts.map(product => {
                 const outOfStock = product.stock === 0;
                 const low = product.stock <= 5 && product.stock > 0;
@@ -2552,6 +2597,7 @@ export const PublicCatalog = () => {
                 return (
                   <div 
                     key={product.id} 
+                    className="catalog-product-card"
                     style={{ 
                       backgroundColor: 'var(--glass-card-bg)', 
                       border: `1px solid ${inCart ? 'var(--primary-color)' : 'var(--glass-card-border)'}`, 
@@ -2580,7 +2626,7 @@ export const PublicCatalog = () => {
                     {inCart && <span style={{ position: 'absolute', top: '12px', left: '12px', zIndex: 10, padding: '4px 10px', borderRadius: '20px', fontSize: '0.7rem', fontWeight: '700', backgroundColor: 'var(--primary-color)', color: '#fff' }}>In Cart ×{inCart.qty}</span>}
 
                     {/* Image */}
-                    <div style={{ height: '180px', width: '100%', backgroundColor: 'rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderBottom: '1px solid var(--glass-card-border)' }}>
+                    <div className="catalog-product-card-img" style={{ height: '180px', width: '100%', backgroundColor: 'rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderBottom: '1px solid var(--glass-card-border)' }}>
                       <img 
                         src={getProductImage(product.image_url, product.category, product.name)} 
                         alt={product.name} 
@@ -2595,9 +2641,9 @@ export const PublicCatalog = () => {
                     </div>
 
                     {/* Details */}
-                    <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', flex: 1, gap: '8px' }}>
+                    <div className="catalog-product-card-body" style={{ padding: '20px', display: 'flex', flexDirection: 'column', flex: 1, gap: '8px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-                        <h3 style={{
+                        <h3 className="catalog-product-card-title" style={{
                           fontSize: '1rem',
                           fontWeight: '700',
                           margin: 0,
@@ -2612,7 +2658,7 @@ export const PublicCatalog = () => {
                         }}>{product.name}</h3>
                         {product.category && <span style={{ padding: '3px 8px', borderRadius: '12px', fontSize: '0.68rem', fontWeight: '600', backgroundColor: 'var(--glass-card-bg)', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{product.category}</span>}
                       </div>
-                      <p style={{
+                      <p className="catalog-product-card-desc" style={{
                         fontSize: '0.8rem',
                         color: 'var(--text-muted)',
                         margin: '2px 0 auto 0',
@@ -2623,9 +2669,9 @@ export const PublicCatalog = () => {
                         overflow: 'hidden',
                         height: '2.8em'
                       }}>{product.description || 'No description available.'}</p>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--glass-card-border)' }}>
+                      <div className="catalog-product-card-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--glass-card-border)' }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <span style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--accent-color)' }}>{product.price.toLocaleString()} FCFA</span>
+                          <span className="catalog-product-card-price" style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--accent-color)' }}>{product.price.toLocaleString()} FCFA</span>
                           <span style={{
                             fontSize: '0.7rem',
                             fontWeight: '600',
@@ -2746,7 +2792,7 @@ export const PublicCatalog = () => {
             {/* Backdrop */}
             <div onClick={() => setCartOpen(false)} style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)' }} />
             {/* Panel */}
-            <div style={{ 
+            <div className="catalog-drawer-panel" style={{ 
               position: 'absolute', 
               top: '24px', 
               right: '24px', 

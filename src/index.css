@@ -1327,4 +1327,294 @@ label {
   }
 }
 
+/* Public catalog responsive product grid - at least 2 columns on mobile */
+.public-product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 24px;
+}
+
+@media (max-width: 640px) {
+  .public-product-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+  .public-product-card {
+    border-radius: 12px !important;
+  }
+  .public-product-card img {
+    height: 120px !important;
+  }
+  .public-product-card .details-padding {
+    padding: 10px !important;
+  }
+  .public-product-card h3 {
+    font-size: 0.82rem !important;
+  }
+  .public-product-card p {
+    display: none !important; /* Hide description on mobile to keep compact */
+  }
+  .public-product-card .price-text {
+    font-size: 0.95rem !important;
+  }
+}
+
+/* Storefront POS responsive product grid - at least 3 columns on mobile */
+@media (max-width: 640px) {
+  #pos-product-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 6px !important;
+  }
+  .pos-product-card {
+    min-height: 145px !important;
+    border-radius: 12px !important;
+  }
+  .pos-product-img-container {
+    height: 75px !important;
+  }
+  .pos-product-card h3 {
+    font-size: 0.72rem !important;
+    height: 2.4em !important;
+  }
+  .pos-product-card p.pos-product-desc {
+    display: none !important;
+  }
+  .pos-product-card span {
+    font-size: 0.7rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .pos-product-card {
+    min-height: 135px !important;
+    border-radius: 10px !important;
+  }
+  .pos-product-img-container {
+    height: 65px !important;
+  }
+}
+
+/* Responsive KPI Val text scaling */
+.kpi-val-text {
+  font-size: 2.2rem;
+  font-weight: 800;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .glass-panel {
+    padding: 10px !important;
+    --card-padding: 10px !important;
+  }
+  .card-title {
+    font-size: 0.85rem !important;
+    --card-title-size: 0.85rem !important;
+  }
+  .kpi-val-text {
+    font-size: 1.15rem !important;
+  }
+}
+
+/* Collapse inventory product table into single column card layout under 480px for narrow viewports */
+@media (max-width: 480px) {
+  #products-table tbody {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  #sales-table tbody {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  #staff-table tbody {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+}
+
+/* Hardware-accelerated CSS Glowing for Chatbot Card */
+@keyframes chatbotNeonPulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(226, 88, 34, 0.45), 0 0 25px rgba(179, 0, 0, 0.25), inset 0 0 15px rgba(239, 68, 68, 0.15);
+    border-color: rgba(226, 88, 34, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(226, 88, 34, 0.75), 0 0 40px rgba(241, 196, 15, 0.45), inset 0 0 25px rgba(241, 196, 15, 0.25);
+    border-color: rgba(241, 196, 15, 0.8);
+  }
+}
+
+.chatbot-neon-glow-container {
+  position: absolute;
+  width: 304px;
+  height: 404px;
+  border-radius: 22px;
+  border: 2px solid rgba(226, 88, 34, 0.6);
+  background-color: var(--bg-sidebar, #111827);
+  animation: chatbotNeonPulse 3s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ============================================
+   PUBLIC CATALOG — MOBILE-FIRST RESPONSIVENESS
+   ============================================ */
+
+/* Product grid: was hardcoded to minmax(260px,1fr) inline,
+   which forces 1 column on any phone under ~540px wide. */
+.catalog-product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 24px;
+}
+
+@media (max-width: 900px) {
+  .catalog-product-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .catalog-product-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .catalog-product-grid {
+    grid-template-columns: repeat(2, 1fr) !important; /* keep 2-col even on tiny phones */
+    gap: 8px !important;
+  }
+}
+
+/* Product card internals shrink on phone so 2-up doesn't feel cramped */
+@media (max-width: 640px) {
+  .catalog-product-card-img {
+    height: 110px !important;
+  }
+  .catalog-product-card-body {
+    padding: 12px !important;
+    gap: 4px !important;
+  }
+  .catalog-product-card-title {
+    font-size: 0.82rem !important;
+    height: 2.2em !important;
+  }
+  .catalog-product-card-desc {
+    display: none !important; /* desc eats too much vertical space at 2-col */
+  }
+  .catalog-product-card-price {
+    font-size: 1rem !important;
+  }
+  .catalog-product-card-footer {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+  .catalog-product-card-footer button {
+    width: 100% !important;
+  }
+}
+
+/* Page outer padding: 40px is way too much on a 360px phone */
+.catalog-page-shell {
+  padding: 40px 20px;
+}
+@media (max-width: 640px) {
+  .catalog-page-shell {
+    padding: 16px 12px !important;
+  }
+}
+
+/* Header row: brand + buttons need to wrap and shrink, not overflow */
+@media (max-width: 640px) {
+  .catalog-header-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+  .catalog-header-actions {
+    width: 100%;
+    justify-content: space-between !important;
+  }
+  .catalog-header-actions button {
+    flex: 1;
+    justify-content: center !important;
+    padding: 8px 10px !important;
+    font-size: 0.78rem !important;
+    white-space: nowrap !important;
+  }
+  .catalog-brand-title {
+    font-size: 1.4rem !important;
+  }
+}
+
+/* Search & filter bar */
+@media (max-width: 640px) {
+  .catalog-search-filters {
+    padding: 12px !important;
+    gap: 10px !important;
+  }
+}
+
+/* Cart drawer: was hardcoded calc(100% - 48px) / maxWidth 400-440px with
+   24px top/bottom/right insets — eats the whole screen awkwardly on phone.
+   Make it a true full-screen sheet on mobile, like a real app. */
+@media (max-width: 640px) {
+  .catalog-drawer-panel {
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 0 !important;
+  }
+}
+
+/* Checkout screen */
+@media (max-width: 640px) {
+  .catalog-checkout-shell {
+    padding: 16px 12px !important;
+  }
+  .catalog-checkout-shell h1 {
+    font-size: 1.3rem !important;
+  }
+}
+
+/* Floating review chatbot + ad popup: don't let them overflow viewport width */
+@media (max-width: 480px) {
+  .catalog-chatbot-launcher {
+    right: 12px !important;
+    bottom: 12px !important;
+    left: auto !important;
+  }
+  .catalog-chatbot-window {
+    width: calc(100vw - 24px) !important;
+    right: 12px !important;
+    left: 12px !important;
+  }
+  .catalog-ad-popup {
+    width: calc(100vw - 24px) !important;
+    left: 12px !important;
+    right: 12px !important;
+    transform: none !important;
+  }
+}
+
+/* Track-order drawer: same full-bleed treatment as cart on mobile */
+@media (max-width: 640px) {
+  .catalog-track-drawer {
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 0 !important;
+  }
+}
+
 
