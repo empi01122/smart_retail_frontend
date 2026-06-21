@@ -178,28 +178,28 @@ export const Sales = () => {
       {/* Summary KPI Panel */}
       <div className="sales-kpi-grid">
         <Card title="Total Revenue" style={{ padding: '20px' }}>
-          <h2 style={{ fontSize: '2rem', color: 'var(--accent-color)', margin: '4px 0 0 0' }}>
+          <h2 className="kpi-val-text" style={{ color: 'var(--accent-color)', margin: '4px 0 0 0' }}>
             {totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} FCFA
           </h2>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Gross value of all sales</span>
         </Card>
 
         <Card title="Checkout Volume" style={{ padding: '20px' }}>
-          <h2 style={{ fontSize: '2rem', color: 'var(--primary-color)', margin: '4px 0 0 0' }}>
+          <h2 className="kpi-val-text" style={{ color: 'var(--primary-color)', margin: '4px 0 0 0' }}>
             {totalTransactions}
           </h2>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Number of transactions processed</span>
         </Card>
 
         <Card title="Items Dispensed" style={{ padding: '20px' }}>
-          <h2 style={{ fontSize: '2rem', color: 'var(--color-success)', margin: '4px 0 0 0' }}>
+          <h2 className="kpi-val-text" style={{ color: 'var(--color-success)', margin: '4px 0 0 0' }}>
             {totalItemsSold}
           </h2>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Total units sold and deducted from stock</span>
         </Card>
 
         <Card title="Avg Basket Value" style={{ padding: '20px' }}>
-          <h2 style={{ fontSize: '2rem', color: 'var(--text-primary)', margin: '4px 0 0 0' }}>
+          <h2 className="kpi-val-text" style={{ color: 'var(--text-primary)', margin: '4px 0 0 0' }}>
             {averageBasketValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} FCFA
           </h2>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Average revenue per transaction</span>

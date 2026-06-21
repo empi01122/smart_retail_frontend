@@ -140,12 +140,32 @@ export const Storefront = () => {
         el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
         setTimeout(() => {
           const updatedRect = el.getBoundingClientRect();
+          let leftVal = updatedRect.left - 8;
+          let topVal = updatedRect.top - 8;
+          let widthVal = updatedRect.width + 16;
+          let heightVal = updatedRect.height + 16;
+          
+          if (leftVal < 0) {
+            widthVal += leftVal;
+            leftVal = 0;
+          }
+          if (leftVal + widthVal > window.innerWidth) {
+            widthVal = window.innerWidth - leftVal;
+          }
+          if (topVal < 0) {
+            heightVal += topVal;
+            topVal = 0;
+          }
+          if (topVal + heightVal > window.innerHeight) {
+            heightVal = window.innerHeight - topVal;
+          }
+
           setHighlightStyle({
             position: 'fixed',
-            left: `${updatedRect.left - 8}px`,
-            top: `${updatedRect.top - 8}px`,
-            width: `${updatedRect.width + 16}px`,
-            height: `${updatedRect.height + 16}px`,
+            left: `${leftVal}px`,
+            top: `${topVal}px`,
+            width: `${widthVal}px`,
+            height: `${heightVal}px`,
             borderRadius: '12px',
             boxShadow: '0 0 0 9999px rgba(15, 23, 42, 0.75)',
             zIndex: 100000,
@@ -183,16 +203,25 @@ export const Storefront = () => {
       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
     };
 
-    if (step.position === 'bottom') {
+    let computedPosition = step.position;
+    if (window.innerWidth <= 640) {
+      if (computedPosition === 'left' || computedPosition === 'right' || !computedPosition) {
+        const elementCenterY = rect.top + rect.height / 2;
+        const viewportCenterY = window.innerHeight / 2;
+        computedPosition = elementCenterY < viewportCenterY ? 'bottom' : 'top';
+      }
+    }
+
+    if (computedPosition === 'bottom') {
       styles.top = `${rect.bottom + margin}px`;
       styles.left = `${rect.left + rect.width / 2 - 140}px`;
-    } else if (step.position === 'top') {
+    } else if (computedPosition === 'top') {
       styles.top = `${rect.top - 190 - margin}px`;
       styles.left = `${rect.left + rect.width / 2 - 140}px`;
-    } else if (step.position === 'left') {
+    } else if (computedPosition === 'left') {
       styles.top = `${rect.top + rect.height / 2 - 90}px`;
       styles.left = `${rect.left - 280 - margin}px`;
-    } else if (step.position === 'right') {
+    } else if (computedPosition === 'right') {
       styles.top = `${rect.top + rect.height / 2 - 90}px`;
       styles.left = `${rect.right + margin}px`;
     }
@@ -208,8 +237,8 @@ export const Storefront = () => {
     const numericTop = parseFloat(styles.top);
     if (!isNaN(numericTop)) {
       if (numericTop < 12) styles.top = '12px';
-      if (numericTop + 200 > window.innerHeight - 12) {
-        styles.top = `${window.innerHeight - 200 - 12}px`;
+      if (numericTop + 220 > window.innerHeight - 12) {
+        styles.top = `${window.innerHeight - 220 - 12}px`;
       }
     }
 
@@ -898,10 +927,10 @@ export const Storefront = () => {
           background: 'rgba(255, 255, 255, 0.02)',
           border: '1px solid rgba(255, 255, 255, 0.05)'
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-              <h1 className="pos-terminal-title" style={{ margin: 0 }}>Register Terminal</h1>
-              
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', width: '100%' }}>
+            <h1 className="pos-terminal-title" style={{ margin: 0 }}>POS Cashier Terminal</h1>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginLeft: 'auto' }}>
               {/* Help Tour */}
               <button
                 onClick={() => {
@@ -1005,10 +1034,11 @@ export const Storefront = () => {
                   )}
                 </button>
               )}
+
+              <span className="pos-total-items-badge" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                Total items active: <strong>{products.length}</strong>
+              </span>
             </div>
-            <span className="pos-total-items-badge" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              Total items active: <strong>{products.length}</strong>
-            </span>
           </div>
 
           <div style={{ display: 'flex', gap: '12px' }}>

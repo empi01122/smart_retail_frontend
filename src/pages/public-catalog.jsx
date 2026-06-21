@@ -775,24 +775,25 @@ export const PublicCatalog = () => {
       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
     };
 
+    let computedPosition = step.position;
     if (window.innerWidth <= 640) {
-      styles.bottom = '24px';
-      styles.left = '50%';
-      styles.transform = 'translateX(-50%)';
-      styles.top = 'auto';
-      return styles;
+      if (computedPosition === 'left' || computedPosition === 'right' || !computedPosition) {
+        const elementCenterY = rect.top + rect.height / 2;
+        const viewportCenterY = window.innerHeight / 2;
+        computedPosition = elementCenterY < viewportCenterY ? 'bottom' : 'top';
+      }
     }
 
-    if (step.position === 'bottom') {
+    if (computedPosition === 'bottom') {
       styles.top = `${rect.bottom + margin}px`;
       styles.left = `${rect.left + rect.width / 2 - 140}px`;
-    } else if (step.position === 'top') {
+    } else if (computedPosition === 'top') {
       styles.top = `${rect.top - 190 - margin}px`;
       styles.left = `${rect.left + rect.width / 2 - 140}px`;
-    } else if (step.position === 'left') {
+    } else if (computedPosition === 'left') {
       styles.top = `${rect.top + rect.height / 2 - 90}px`;
       styles.left = `${rect.left - 280 - margin}px`;
-    } else if (step.position === 'right') {
+    } else if (computedPosition === 'right') {
       styles.top = `${rect.top + rect.height / 2 - 90}px`;
       styles.left = `${rect.right + margin}px`;
     }
@@ -808,8 +809,8 @@ export const PublicCatalog = () => {
     const numericTop = parseFloat(styles.top);
     if (!isNaN(numericTop)) {
       if (numericTop < 12) styles.top = '12px';
-      if (numericTop + 200 > window.innerHeight - 12) {
-        styles.top = `${window.innerHeight - 200 - 12}px`;
+      if (numericTop + 220 > window.innerHeight - 12) {
+        styles.top = `${window.innerHeight - 220 - 12}px`;
       }
     }
 
@@ -2672,7 +2673,7 @@ export const PublicCatalog = () => {
                       <div className="catalog-product-card-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--glass-card-border)' }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                           <span className="catalog-product-card-price" style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--accent-color)' }}>{product.price.toLocaleString()} FCFA</span>
-                          <span style={{
+                          <span className="catalog-product-stock-text" style={{
                             fontSize: '0.7rem',
                             fontWeight: '600',
                             color: outOfStock ? '#ef4444' : low ? '#f59e0b' : '#10b981',
@@ -2808,12 +2809,12 @@ export const PublicCatalog = () => {
               backdropFilter: 'blur(16px)',
               overflow: 'hidden'
             }}>
-              <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-sidebar)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="catalog-drawer-header" style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-sidebar)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '700', color: 'var(--text-primary)' }}>Your Cart ({cartCount})</h2>
                 <button onClick={() => setCartOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.4rem', lineHeight: 1 }}>×</button>
               </div>
 
-              <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div className="catalog-drawer-content" style={{ flex: 1, overflowY: 'auto', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {cart.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
                     <CartIcon size={40} /><p style={{ marginTop: '12px' }}>Your cart is empty</p>
@@ -2905,7 +2906,7 @@ export const PublicCatalog = () => {
               </div>
 
               {cart.length > 0 && (
-                <div style={{ padding: '20px 24px', borderTop: '1px solid var(--border-sidebar)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div className="catalog-drawer-footer" style={{ padding: '20px 24px', borderTop: '1px solid var(--border-sidebar)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '800', fontSize: '1.05rem' }}>
                     <span>Total</span>
                     <span style={{ color: 'var(--accent-color)' }}>{cartTotal.toLocaleString()} FCFA</span>

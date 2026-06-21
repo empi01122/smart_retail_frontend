@@ -853,7 +853,7 @@ export const Dashboard = () => {
             {metricsLoading ? (
               <div className="shimmer-bg" style={{ height: '38px', borderRadius: '6px', margin: '4px 0' }} />
             ) : (
-              <h2 style={{ fontSize: '2.2rem', color: 'var(--accent-color)', margin: '4px 0' }}>
+              <h2 className="kpi-val-text" style={{ color: 'var(--accent-color)', margin: '4px 0' }}>
                 {summary?.total_revenue?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'} FCFA
               </h2>
             )}
@@ -865,7 +865,7 @@ export const Dashboard = () => {
             {metricsLoading ? (
               <div className="shimmer-bg" style={{ height: '38px', borderRadius: '6px', margin: '4px 0' }} />
             ) : (
-              <h2 style={{ fontSize: '2.2rem', color: 'var(--primary-color)', margin: '4px 0' }}>
+              <h2 className="kpi-val-text" style={{ color: 'var(--primary-color)', margin: '4px 0' }}>
                 {summary?.total_sales ?? 0}
               </h2>
             )}
@@ -877,7 +877,7 @@ export const Dashboard = () => {
             {metricsLoading ? (
               <div className="shimmer-bg" style={{ height: '38px', borderRadius: '6px', margin: '4px 0' }} />
             ) : (
-              <h2 style={{ fontSize: '2.2rem', color: 'var(--color-success)', margin: '4px 0' }}>
+              <h2 className="kpi-val-text" style={{ color: 'var(--color-success)', margin: '4px 0' }}>
                 {summary?.total_products ?? 0}
               </h2>
             )}
@@ -889,8 +889,7 @@ export const Dashboard = () => {
             {metricsLoading ? (
               <div className="shimmer-bg" style={{ height: '38px', borderRadius: '6px', margin: '4px 0' }} />
             ) : (
-              <h2 style={{
-                fontSize: '2.2rem',
+              <h2 className="kpi-val-text" style={{
                 color: (summary?.low_stock_alerts > 0) ? 'var(--color-danger)' : 'var(--text-secondary)',
                 margin: '4px 0'
               }}>
