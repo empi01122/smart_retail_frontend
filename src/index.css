@@ -270,15 +270,16 @@ label {
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 800px) {
   .main-content {
-    margin-left: 0;
-    padding: 10px !important;
+    margin-left: 0 !important;
+    padding: 16px !important;
     padding-top: 70px !important; /* Spacer for top navbar in mobile (60px header + 10px gap) */
     padding-bottom: 70px !important; /* Spacer for bottom navbar in mobile (60px nav + 10px gap) */
     min-height: calc(100vh - 140px);
     min-width: 0;
-    max-width: 100%;
+    max-width: 100% !important;
+    width: 100% !important;
   }
 }
 
@@ -453,7 +454,7 @@ label {
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 800px) {
   .sidebar-panel {
     display: none !important;
   }
@@ -477,7 +478,7 @@ label {
   z-index: 100;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 800px) {
   .mobile-header {
     display: flex;
   }
@@ -501,7 +502,7 @@ label {
   padding: 0 10px;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 800px) {
   .mobile-bottom-nav {
     display: flex;
   }
@@ -543,7 +544,7 @@ label {
   gap: 16px;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 800px) {
   .form-row {
     flex-direction: column;
     gap: 12px;
@@ -601,7 +602,7 @@ label {
 }
 
 /* Responsive Typography overrides */
-@media (max-width: 640px) {
+@media (max-width: 800px) {
   h1 { font-size: 1.6rem !important; }
   h2 { font-size: 1.3rem !important; }
   h3 { font-size: 1.1rem !important; }
@@ -629,7 +630,7 @@ label {
   z-index: 1;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 800px) {
   .login-left-pane {
     display: none !important; /* Hide branding pane on phone screens */
   }
@@ -668,7 +669,7 @@ label {
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 800px) {
   .pos-layout-container {
     height: calc(100vh - 140px) !important;
     max-height: calc(100vh - 140px) !important;
@@ -683,9 +684,6 @@ label {
     max-height: none !important;
     display: flex;
     flex-direction: column;
-  }
-  .pos-product-desc {
-    display: none !important; /* hide description on mobile to keep grid compact */
   }
 }
 
@@ -755,7 +753,7 @@ label {
   position: relative;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 800px) {
   .login-left-pane {
     display: none !important;
   }
@@ -841,7 +839,7 @@ label {
   height: 90px;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 800px) {
   .pos-header-filters {
     padding: 10px !important;
     gap: 10px !important;
@@ -997,7 +995,7 @@ label {
 }
 
 /* --- Global Mobile Responsiveness Overrides --- */
-@media (max-width: 640px) {
+@media (max-width: 800px) {
   /* KPI metrics grid responsive adjustments */
   .dashboard-kpi-grid,
   .sales-kpi-grid {
@@ -1351,70 +1349,19 @@ label {
   }
 }
 
-/* Public catalog responsive product grid - at least 2 columns on mobile */
-.public-product-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 24px;
-}
-
-@media (max-width: 640px) {
+/* Public catalog responsive product grid - exactly 1 column on phone */
+@media (max-width: 800px) {
   .public-product-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10px !important;
-  }
-  .public-product-card {
-    border-radius: 12px !important;
-  }
-  .public-product-card img {
-    height: 120px !important;
-  }
-  .public-product-card .details-padding {
-    padding: 10px !important;
-  }
-  .public-product-card h3 {
-    font-size: 0.82rem !important;
-  }
-  .public-product-card p {
-    display: none !important; /* Hide description on mobile to keep compact */
-  }
-  .public-product-card .price-text {
-    font-size: 0.95rem !important;
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
   }
 }
 
-/* Storefront POS responsive product grid - at least 3 columns on mobile */
-@media (max-width: 640px) {
+/* Storefront POS responsive product grid - exactly 1 column on phone */
+@media (max-width: 800px) {
   #pos-product-grid {
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 6px !important;
-  }
-  .pos-product-card {
-    min-height: 145px !important;
-    border-radius: 12px !important;
-  }
-  .pos-product-img-container {
-    height: 75px !important;
-  }
-  .pos-product-card h3 {
-    font-size: 0.72rem !important;
-    height: 2.4em !important;
-  }
-  .pos-product-card p.pos-product-desc {
-    display: none !important;
-  }
-  .pos-product-card span {
-    font-size: 0.7rem !important;
-  }
-}
-
-@media (max-width: 480px) {
-  .pos-product-card {
-    min-height: 135px !important;
-    border-radius: 10px !important;
-  }
-  .pos-product-img-container {
-    height: 65px !important;
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
   }
 }
 
@@ -1440,19 +1387,19 @@ label {
   }
 }
 
-/* Collapse inventory product table into 2-column card layout under 480px for narrow viewports */
-@media (max-width: 480px) {
+/* Collapse inventory product table into 1-column card layout on phone viewports */
+@media (max-width: 800px) {
   #products-table tbody {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10px !important;
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
   }
   #sales-table tbody {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10px !important;
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
   }
   #staff-table tbody {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10px !important;
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
   }
 }
 
@@ -1523,7 +1470,7 @@ label {
   /* ============================================
      PHONE SCREENS OPTIMIZATION (320px–767px)
      ============================================ */
-  @media (max-width: 767px) {
+  @media (max-width: 800px) {
     /* Page shell padding */
     .catalog-page-shell {
       padding: 16px !important;
@@ -1786,5 +1733,78 @@ label {
     #staff-table tbody {
       grid-template-columns: 1fr !important;
       gap: 16px !important;
+    }
+
+    /* Fix truncated text in POS product card on mobile */
+    .pos-product-card h3 {
+      font-size: 0.95rem !important;
+      height: auto !important;
+      line-height: 1.25 !important;
+      margin-bottom: 4px !important;
+      display: block !important;
+      -webkit-line-clamp: unset !important;
+      overflow: visible !important;
+      white-space: normal !important;
+    }
+
+    .pos-product-card p.pos-product-desc {
+      display: block !important;
+      font-size: 0.8rem !important;
+      height: auto !important;
+      line-height: 1.35 !important;
+      margin-bottom: 6px !important;
+      -webkit-line-clamp: unset !important;
+      overflow: visible !important;
+      white-space: normal !important;
+    }
+
+    .pos-product-card span {
+      font-size: 0.8rem !important;
+      white-space: normal !important;
+      overflow: visible !important;
+      text-overflow: clip !important;
+    }
+
+    /* Hide overlapping category pill on horizontal POS product cards on mobile */
+    .pos-product-card > span {
+      display: none !important;
+    }
+
+    /* Fix expanded sales details row elements overflowing or getting cut off on mobile */
+    #sales-table tr.expanded-details-row {
+      padding: 10px 12px !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
+    #sales-table tr.expanded-details-row td {
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
+    #sales-table tr.expanded-details-row td > div {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 16px !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
+    #sales-table tr.expanded-details-row td > div > div {
+      flex: 1 1 100% !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+      box-sizing: border-box !important;
+    }
+    #sales-table tr.expanded-details-row span,
+    #sales-table tr.expanded-details-row p,
+    #sales-table tr.expanded-details-row div {
+      white-space: normal !important;
+      word-break: break-word !important;
+      overflow-wrap: anywhere !important;
+    }
+    #sales-table tr.expanded-details-row td span {
+      white-space: normal !important;
+      word-break: break-word !important;
+      text-overflow: unset !important;
+      overflow: visible !important;
     }
   }
