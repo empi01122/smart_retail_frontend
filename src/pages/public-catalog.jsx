@@ -2677,7 +2677,7 @@ export const PublicCatalog = () => {
 
                     {/* Details */}
                     <div className="catalog-product-card-body" style={{ padding: '20px', display: 'flex', flexDirection: 'column', flex: 1, gap: '8px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                      <div className="catalog-product-card-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
                         <h3 className="catalog-product-card-title" style={{
                           fontSize: '1rem',
                           fontWeight: '700',
@@ -2691,7 +2691,7 @@ export const PublicCatalog = () => {
                           height: '2.6em',
                           lineHeight: '1.3'
                         }}>{product.name}</h3>
-                        {product.category && <span style={{ padding: '3px 8px', borderRadius: '12px', fontSize: '0.68rem', fontWeight: '600', backgroundColor: 'var(--glass-card-bg)', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{product.category}</span>}
+                        {product.category && <span className="catalog-product-card-badge" style={{ padding: '3px 8px', borderRadius: '12px', fontSize: '0.68rem', fontWeight: '600', backgroundColor: 'var(--glass-card-bg)', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{product.category}</span>}
                       </div>
                       <p className="catalog-product-card-desc" style={{
                         fontSize: '0.8rem',
@@ -2717,7 +2717,7 @@ export const PublicCatalog = () => {
                           </span>
                         </div>
                         {inCart ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <div className="catalog-qty-selector" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <button
                               onMouseDown={() => startSwiftChange(product.id, -1)}
                               onMouseUp={stopSwiftChange}
