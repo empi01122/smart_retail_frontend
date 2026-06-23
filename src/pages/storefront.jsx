@@ -107,7 +107,7 @@ export const Storefront = () => {
   // Guided Walkthrough Onboarding Tour States
   const [tourActive, setTourActive] = useState(false);
   const [currentStepIdx, setCurrentStepIdx] = useState(0);
-  const [highlightStyle, setHighlightStyle] = useState(null);
+  const [activeElementRect, setActiveElementRect] = useState(null);
 
   const handleFinishTour = () => {
     setTourActive(false);
@@ -127,67 +127,101 @@ export const Storefront = () => {
 
   useEffect(() => {
     if (!tourActive) {
-      setHighlightStyle(null);
+      setActiveElementRect(null);
       return;
     }
 
     const step = TOUR_STEPS[currentStepIdx];
     if (!step) return;
 
-    const updateSpotlight = () => {
-      const el = document.querySelector(step.target);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
-        setTimeout(() => {
-          const updatedRect = el.getBoundingClientRect();
-          let leftVal = updatedRect.left - 8;
-          let topVal = updatedRect.top - 8;
-          let widthVal = updatedRect.width + 16;
-          let heightVal = updatedRect.height + 16;
-          
-          if (leftVal < 0) {
-            widthVal += leftVal;
-            leftVal = 0;
-          }
-          if (leftVal + widthVal > window.innerWidth) {
-            widthVal = window.innerWidth - leftVal;
-          }
-          if (topVal < 0) {
-            heightVal += topVal;
-            topVal = 0;
-          }
-          if (topVal + heightVal > window.innerHeight) {
-            heightVal = window.innerHeight - topVal;
-          }
+    // Scroll target into view
+    const el = document.querySelector(step.target);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+    }
 
-          setHighlightStyle({
-            position: 'fixed',
-            left: `${leftVal}px`,
-            top: `${topVal}px`,
-            width: `${widthVal}px`,
-            height: `${heightVal}px`,
-            borderRadius: '12px',
-            boxShadow: '0 0 0 9999px rgba(15, 23, 42, 0.75)',
-            zIndex: 100000,
-            pointerEvents: 'none',
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-          });
-        }, 300);
+    let animationFrameId;
+    const updatePositions = () => {
+      const targetEl = document.querySelector(step.target);
+      if (targetEl) {
+        const rect = targetEl.getBoundingClientRect();
+        setActiveElementRect(prev => {
+          if (
+            prev &&
+            prev.top === rect.top &&
+            prev.left === rect.left &&
+            prev.width === rect.width &&
+            prev.height === rect.height
+          ) {
+            return prev;
+          }
+          return {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height,
+            bottom: rect.bottom,
+            right: rect.right
+          };
+        });
       } else {
-        setHighlightStyle(null);
+        setActiveElementRect(null);
       }
+      animationFrameId = requestAnimationFrame(updatePositions);
     };
 
-    updateSpotlight();
-    window.addEventListener('resize', updateSpotlight);
-    return () => window.removeEventListener('resize', updateSpotlight);
+    animationFrameId = requestAnimationFrame(updatePositions);
+
+    window.addEventListener('resize', updatePositions);
+    window.addEventListener('scroll', updatePositions, true);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener('resize', updatePositions);
+      window.removeEventListener('scroll', updatePositions, true);
+    };
   }, [tourActive, currentStepIdx]);
 
-  const getPopoverStyle = (step) => {
-    const el = document.querySelector(step.target);
-    if (!el) return { display: 'none' };
+  const getHighlightStyle = () => {
+    if (!activeElementRect) return null;
     
-    const rect = el.getBoundingClientRect();
+    let leftVal = activeElementRect.left - 8;
+    let topVal = activeElementRect.top - 8;
+    let widthVal = activeElementRect.width + 16;
+    let heightVal = activeElementRect.height + 16;
+    
+    if (leftVal < 0) {
+      widthVal += leftVal;
+      leftVal = 0;
+    }
+    if (leftVal + widthVal > window.innerWidth) {
+      widthVal = window.innerWidth - leftVal;
+    }
+    if (topVal < 0) {
+      heightVal += topVal;
+      topVal = 0;
+    }
+    if (topVal + heightVal > window.innerHeight) {
+      heightVal = window.innerHeight - topVal;
+    }
+
+    return {
+      position: 'fixed',
+      left: `${leftVal}px`,
+      top: `${topVal}px`,
+      width: `${widthVal}px`,
+      height: `${heightVal}px`,
+      borderRadius: '12px',
+      boxShadow: '0 0 0 9999px rgba(15, 23, 42, 0.75)',
+      zIndex: 100000,
+      pointerEvents: 'none',
+      transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)'
+    };
+  };
+
+  const getPopoverStyle = (step) => {
+    if (!activeElementRect) return { display: 'none' };
+    
     const margin = 16;
     
     const styles = {
@@ -200,30 +234,30 @@ export const Storefront = () => {
       padding: '16px',
       boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5), var(--shadow-lg)',
       color: 'var(--text-primary)',
-      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+      transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)'
     };
 
     let computedPosition = step.position;
     if (window.innerWidth <= 640) {
       if (computedPosition === 'left' || computedPosition === 'right' || !computedPosition) {
-        const elementCenterY = rect.top + rect.height / 2;
+        const elementCenterY = activeElementRect.top + activeElementRect.height / 2;
         const viewportCenterY = window.innerHeight / 2;
         computedPosition = elementCenterY < viewportCenterY ? 'bottom' : 'top';
       }
     }
 
     if (computedPosition === 'bottom') {
-      styles.top = `${rect.bottom + margin}px`;
-      styles.left = `${rect.left + rect.width / 2 - 140}px`;
+      styles.top = `${activeElementRect.bottom + margin}px`;
+      styles.left = `${activeElementRect.left + activeElementRect.width / 2 - 140}px`;
     } else if (computedPosition === 'top') {
-      styles.top = `${rect.top - 190 - margin}px`;
-      styles.left = `${rect.left + rect.width / 2 - 140}px`;
+      styles.top = `${activeElementRect.top - 180 - margin}px`;
+      styles.left = `${activeElementRect.left + activeElementRect.width / 2 - 140}px`;
     } else if (computedPosition === 'left') {
-      styles.top = `${rect.top + rect.height / 2 - 90}px`;
-      styles.left = `${rect.left - 280 - margin}px`;
+      styles.top = `${activeElementRect.top + activeElementRect.height / 2 - 90}px`;
+      styles.left = `${activeElementRect.left - 280 - margin}px`;
     } else if (computedPosition === 'right') {
-      styles.top = `${rect.top + rect.height / 2 - 90}px`;
-      styles.left = `${rect.right + margin}px`;
+      styles.top = `${activeElementRect.top + activeElementRect.height / 2 - 90}px`;
+      styles.left = `${activeElementRect.right + margin}px`;
     }
 
     // Keep popover inside screen borders
@@ -265,7 +299,7 @@ export const Storefront = () => {
   const [momoPhoneNumber, setMomoPhoneNumber] = useState('');
 
   // Mobile/Tablet responsive view controls
-  const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 1024);
+  const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 800);
   const [cartOpen, setCartOpen] = useState(false);
 
   // Auto-open/close cart drawer for the guided tour steps on mobile
@@ -281,7 +315,7 @@ export const Storefront = () => {
 
   useEffect(() => {
     const handleResize = () => {
-      const isMobile = window.innerWidth <= 1024;
+      const isMobile = window.innerWidth <= 800;
       setIsMobileView(isMobile);
       if (!isMobile) {
         setCartOpen(false);
@@ -1891,10 +1925,10 @@ export const Storefront = () => {
       {renderSimulatedMomoModal()}
 
       {/* Guided Onboarding Walkthrough Tour Overlay & Bubble */}
-      {tourActive && highlightStyle && (
+      {tourActive && activeElementRect && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 99999, pointerEvents: 'none' }}>
           {/* Spotlight Mask */}
-          <div style={highlightStyle} />
+          <div style={getHighlightStyle()} />
           
           {/* Popover Bubble */}
           <div style={{ ...getPopoverStyle(TOUR_STEPS[currentStepIdx]), pointerEvents: 'auto' }}>
