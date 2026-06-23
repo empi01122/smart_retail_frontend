@@ -44,8 +44,14 @@ const api = axios.create({
   },
 });
 
-// Request interceptor to automatically append scoped enterprise ID for Technician impersonation
-api.interceptors.request.use((config) => {
+let tokenRetriever = null;
+
+export const registerTokenRetriever = (retriever) => {
+  tokenRetriever = retriever;
+};
+
+// Request interceptor to automatically append scoped enterprise ID and fresh auth token
+api.interceptors.request.use(async (config) => {
   const activeEntId = localStorage.getItem('active_enterprise_id');
   if (activeEntId) {
     config.params = {
@@ -53,12 +59,24 @@ api.interceptors.request.use((config) => {
       enterprise_id: activeEntId
     };
   }
+
+  if (tokenRetriever) {
+    try {
+      const token = await tokenRetriever();
+      if (token) {
+        config.headers['Authorization'] = `Bearer ${token}`;
+      }
+    } catch (e) {
+      console.error('[API Interceptor] Failed to fetch fresh token:', e);
+    }
+  }
+
   return config;
 }, (error) => {
   return Promise.reject(error);
 });
 
-// Helper to set the token globally for all subsequent requests
+// Helper to set the token globally for all subsequent requests (retained for backward compatibility)
 export const setAuthToken = (token) => {
   if (token) {
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;

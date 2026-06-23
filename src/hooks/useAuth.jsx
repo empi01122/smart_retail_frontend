@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth as useClerkAuth, useUser as useClerkUser } from '@clerk/clerk-react';
-import { setAuthToken } from '../services/api';
+import { setAuthToken, registerTokenRetriever } from '../services/api';
 import { getMyProfile } from '../services/user';
 
 const AuthContext = createContext();
@@ -37,6 +37,18 @@ export const AuthProvider = ({ children }) => {
       await clerkAuth.signOut();
     }
   };
+
+  // Register the dynamic token retriever for Axios to fetch fresh non-expired tokens on every request
+  useEffect(() => {
+    if (clerkAuth.isLoaded) {
+      registerTokenRetriever(() => {
+        if (clerkAuth.userId) {
+          return clerkAuth.getToken({ skipCache: false });
+        }
+        return isBypass ? 'debug' : null;
+      });
+    }
+  }, [clerkAuth.isLoaded, clerkAuth.userId, isBypass]);
 
   // Sync session and fetch local database user details (roles, permissions)
   useEffect(() => {
