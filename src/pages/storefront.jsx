@@ -299,7 +299,7 @@ export const Storefront = () => {
   const [momoPhoneNumber, setMomoPhoneNumber] = useState('');
 
   // Mobile/Tablet responsive view controls
-  const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 800);
+  const [isMobileView, setIsMobileView] = useState(window.innerWidth <= 900);
   const [cartOpen, setCartOpen] = useState(false);
 
   // Auto-open/close cart drawer for the guided tour steps on mobile
@@ -315,7 +315,7 @@ export const Storefront = () => {
 
   useEffect(() => {
     const handleResize = () => {
-      const isMobile = window.innerWidth <= 800;
+      const isMobile = window.innerWidth <= 900;
       setIsMobileView(isMobile);
       if (!isMobile) {
         setCartOpen(false);

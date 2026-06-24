@@ -168,7 +168,7 @@ export const Sales = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }} className="animate-fade-in">
       
       {/* Page Header */}
-      <div>
+      <div className="sales-header-row">
         <h1 style={{ fontSize: '1.8rem', marginBottom: '4px' }}>Transaction Ledger</h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
           Historical checkout transactions recorded in this store terminal.
@@ -207,7 +207,7 @@ export const Sales = () => {
       </div>
 
       {/* Transaction Logs Table */}
-      <Card padding="0px" style={{ overflow: 'hidden' }}>
+      <Card className="sales-table-card" padding="0px" style={{ overflow: 'hidden' }}>
         <Table
           id="sales-table"
           headers={['Transaction ID', 'Timestamp', 'Items Sold', 'Gross Total', 'Details']}

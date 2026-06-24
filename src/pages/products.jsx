@@ -274,14 +274,14 @@ export const Products = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }} className="animate-fade-in">
       
       {/* Search filters and Add button */}
-      <div style={{
+      <div className="inventory-header-row" style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         flexWrap: 'wrap',
         gap: '16px'
       }}>
-        <div>
+        <div className="inventory-title-block">
           <h1 style={{ fontSize: '1.8rem', marginBottom: '4px' }}>Inventory Catalog</h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
             {canManage ? 'Create, view, edit or delete items.' : 'View current items in stock.'}
@@ -301,14 +301,14 @@ export const Products = () => {
       </div>
 
       {/* Filter panel */}
-      <Card style={{ padding: '16px' }}>
-        <div style={{
+      <Card className="inventory-filter-card" style={{ padding: '16px' }}>
+        <div className="inventory-filter-container" style={{
           display: 'flex',
           gap: '16px',
           flexWrap: 'wrap',
           alignItems: 'center'
         }}>
-          <div style={{ position: 'relative', flex: 1, minWidth: '250px' }}>
+          <div className="inventory-search-wrapper" style={{ position: 'relative', flex: 1, minWidth: '250px' }}>
             <input
               id="inventory-search-input"
               type="text"
@@ -375,7 +375,7 @@ export const Products = () => {
       </Card>
 
       {/* Catalog Table */}
-      <Card padding="0px" style={{ overflow: 'hidden' }}>
+      <Card className="inventory-table-card" padding="0px" style={{ overflow: 'hidden' }}>
         <Table
           id="products-table"
           headers={

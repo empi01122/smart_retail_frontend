@@ -2616,11 +2616,11 @@ export const PublicCatalog = () => {
               {[1,2,3,4].map(i => <div key={i} style={{ height: '320px', borderRadius: '16px', backgroundColor: 'var(--glass-card-bg)', border: '1px solid var(--glass-card-border)' }} className="shimmer-bg" />)}
             </div>
           ) : error ? (
-            <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+            <div className="catalog-error-state" style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
               <WarningIcon size={32} /><p>{error}</p>
             </div>
           ) : filteredProducts.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '80px 20px', color: 'var(--text-muted)', border: '1px dashed var(--bg-surface-border)', borderRadius: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+            <div className="catalog-empty-state" style={{ textAlign: 'center', padding: '80px 20px', color: 'var(--text-muted)', border: '1px dashed var(--bg-surface-border)', borderRadius: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
               <CartIcon size={48} style={{ color: 'var(--text-muted)' }} /><p style={{ margin: 0 }}>No products match your search.</p>
             </div>
           ) : (
