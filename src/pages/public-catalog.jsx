@@ -265,7 +265,7 @@ const ReviewChatbot = ({ selectedEntId, selectedEnt, fetchReviews, cartOpen }) =
       bottom: '24px',
       right: cartOpen ? 'auto' : '24px',
       left: cartOpen ? '24px' : 'auto',
-      zIndex: 9999,
+      zIndex: 999,
       fontFamily: 'Inter, system-ui, sans-serif'
     }}>
       {!chatbotOpen && (
@@ -361,7 +361,7 @@ const ReviewChatbot = ({ selectedEntId, selectedEnt, fetchReviews, cartOpen }) =
             <defs>
               {/* Outer filter: larger, slower displacement */}
               <filter id="fireFilterOuter" x="-30%" y="-30%" width="160%" height="160%">
-                <feTurbulence type="fractalNoise" baseFrequency="0.01 0.02" numOctaves="3" seed="1" result="noise" />
+                <feTurbulence type="fractalNoise" baseFrequency="0.01 0.02" numOctaves="2" seed="1" result="noise" />
                 <feOffset dx="0" dy="0" in="noise" result="offsetNoise">
                   <animate attributeName="dy" from="0" to="-200" dur="8s" repeatCount="indefinite" />
                   <animate attributeName="dx" from="-10" to="10" dur="5s" repeatCount="indefinite" />
@@ -376,7 +376,7 @@ const ReviewChatbot = ({ selectedEntId, selectedEnt, fetchReviews, cartOpen }) =
 
               {/* Middle filter: medium displacement */}
               <filter id="fireFilterMiddle" x="-20%" y="-20%" width="140%" height="140%">
-                <feTurbulence type="fractalNoise" baseFrequency="0.02 0.04" numOctaves="3" seed="2" result="noise" />
+                <feTurbulence type="fractalNoise" baseFrequency="0.02 0.04" numOctaves="2" seed="2" result="noise" />
                 <feOffset dx="0" dy="0" in="noise" result="offsetNoise">
                   <animate attributeName="dy" from="0" to="-200" dur="5.5s" repeatCount="indefinite" />
                   <animate attributeName="dx" from="-15" to="15" dur="4s" repeatCount="indefinite" />
@@ -391,7 +391,7 @@ const ReviewChatbot = ({ selectedEntId, selectedEnt, fetchReviews, cartOpen }) =
 
               {/* Inner filter: smaller, faster displacement */}
               <filter id="fireFilterInner" x="-10%" y="-10%" width="120%" height="120%">
-                <feTurbulence type="fractalNoise" baseFrequency="0.03 0.06" numOctaves="3" seed="3" result="noise" />
+                <feTurbulence type="fractalNoise" baseFrequency="0.03 0.06" numOctaves="2" seed="3" result="noise" />
                 <feOffset dx="0" dy="0" in="noise" result="offsetNoise">
                   <animate attributeName="dy" from="0" to="-200" dur="3.5s" repeatCount="indefinite" />
                   <animate attributeName="dx" from="-8" to="8" dur="3s" repeatCount="indefinite" />
@@ -418,7 +418,9 @@ const ReviewChatbot = ({ selectedEntId, selectedEnt, fetchReviews, cartOpen }) =
             animation: 'fireGradient 4s linear infinite, fireFlickerOuter 0.15s infinite alternate',
             filter: 'url(#fireFilterOuter) drop-shadow(0 0 12px #b30000)',
             zIndex: 1,
-            pointerEvents: 'none'
+            pointerEvents: 'none',
+            willChange: 'transform, filter',
+            transform: 'translate3d(0,0,0)'
           }} />
 
           {/* Middle orange flame layer */}
@@ -432,7 +434,9 @@ const ReviewChatbot = ({ selectedEntId, selectedEnt, fetchReviews, cartOpen }) =
             animation: 'fireGradient 3s linear infinite, fireFlickerMiddle 0.2s infinite alternate',
             filter: 'url(#fireFilterMiddle) drop-shadow(0 0 8px #e25822)',
             zIndex: 1,
-            pointerEvents: 'none'
+            pointerEvents: 'none',
+            willChange: 'transform, filter',
+            transform: 'translate3d(0,0,0)'
           }} />
 
           {/* Inner yellow flame layer */}
@@ -446,7 +450,9 @@ const ReviewChatbot = ({ selectedEntId, selectedEnt, fetchReviews, cartOpen }) =
             animation: 'fireGradient 2s linear infinite, fireFlickerInner 0.1s infinite alternate',
             filter: 'url(#fireFilterInner) drop-shadow(0 0 4px #f1c40f)',
             zIndex: 1,
-            pointerEvents: 'none'
+            pointerEvents: 'none',
+            willChange: 'transform, filter',
+            transform: 'translate3d(0,0,0)'
           }} />
 
           {/* Floating Sparks/Embers */}
@@ -606,7 +612,7 @@ const ReviewChatbot = ({ selectedEntId, selectedEnt, fetchReviews, cartOpen }) =
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxWidth: '85%' }}>
                     <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 'bold' }}>Assistant</span>
                     <div style={{ backgroundColor: 'var(--glass-card-bg)', border: '1px solid var(--glass-card-border)', padding: '10px 14px', borderRadius: '14px 14px 14px 0px', color: 'var(--text-primary)' }}>
-                      Understood! Lastly, what is your name so we can record your review?
+                      {chatbotRating >= 4 ? "That's wonderful to hear! Lastly, what is your name so we can save your review?" : "Thank you for the honest feedback. What is your name so we can record your review?"}
                     </div>
                   </div>
                 </>
@@ -658,7 +664,11 @@ const ReviewChatbot = ({ selectedEntId, selectedEnt, fetchReviews, cartOpen }) =
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" style={{ width: '16px', height: '16px', color: '#10B981' }}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                         </svg>
-                        <span>Thank you! Your feedback has been recorded successfully. Have a nice day!</span>
+                        <span>
+                          {chatbotRating >= 4 
+                            ? `Thank you, ${chatbotName}! We are thrilled you had a great experience. Have a wonderful day!` 
+                            : `Thank you, ${chatbotName}. We appreciate your feedback and will work hard to make your next visit better.`}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1267,14 +1277,15 @@ export const PublicCatalog = () => {
     return (
       <div className="catalog-ad-popup" style={{
         position: 'fixed',
-        bottom: '24px',
+        bottom: (tourActive && currentStepIdx === 4) ? '120px' : '24px',
         left: '50%',
         width: 'calc(100% - 48px)',
         maxWidth: '680px',
         zIndex: 10000,
         fontFamily: 'Inter, system-ui, sans-serif',
         animation: 'slideUpAd 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
-        transform: 'translateX(-50%)'
+        transform: 'translateX(-50%)',
+        transition: 'bottom 0.3s ease'
       }}>
         <style>{`
           @keyframes slideUpAd {
@@ -1798,6 +1809,10 @@ export const PublicCatalog = () => {
   // ─── Print receipt ─────────────────────────────────────────────
   const handlePrintReceipt = () => {
     if (!completedOrder) return;
+    const originalTitle = document.title;
+    const receiptId = completedOrder.receipt_number || (`#${completedOrder.id}`);
+    document.title = receiptId;
+
     let container = document.getElementById('printable-receipt-container');
     if (!container) {
       container = document.createElement('div');
@@ -1866,6 +1881,7 @@ export const PublicCatalog = () => {
     document.body.classList.add('is-printing-receipt');
 
     const cleanUp = () => {
+      document.title = originalTitle;
       document.body.classList.remove('is-printing-receipt');
       if (container && container.parentNode) {
         container.parentNode.removeChild(container);
@@ -1980,7 +1996,7 @@ export const PublicCatalog = () => {
                 }}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '18px', height: '18px' }}><path strokeLinecap="round" strokeLinejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.056 48.056 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5zm-3 0h.008v.008H15V10.5z" /></svg>
-                Save / Print Receipt
+                Save Receipt
               </button>
               <button
                 onClick={() => { setStep('browse'); setCompletedOrder(null); setForm({ name: '', phone: '', address: '', note: '' }); }}
@@ -2772,7 +2788,7 @@ export const PublicCatalog = () => {
 
           {/* Customer Testimonials Carousel */}
           {reviews.length > 0 && (
-            <div style={{
+            <div className="catalog-testimonials-card" style={{
               backgroundColor: 'var(--glass-card-bg)',
               border: '1px solid var(--glass-card-border)',
               borderRadius: '16px',
@@ -2823,7 +2839,7 @@ export const PublicCatalog = () => {
 
         {/* ─── Cart Sidebar ─── */}
         {cartOpen && (
-          <div style={{ position: 'fixed', inset: 0, zIndex: 1000 }}>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 20000 }}>
             {/* Backdrop */}
             <div onClick={() => setCartOpen(false)} style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)' }} />
             {/* Panel */}

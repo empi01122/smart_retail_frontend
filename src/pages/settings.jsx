@@ -11,6 +11,33 @@ import Table from '../components/table';
 import Modal from '../components/modal';
 import { WarningIcon } from '../components/icons';
 
+const SETTINGS_TOUR_STEPS = [
+  {
+    target: '#settings-color-primary-picker',
+    title: 'Primary Brand Color',
+    content: 'This color styles primary action buttons, active tabs in the sidebar, and main theme borders. Use it for your primary corporate brand color.',
+    position: 'bottom'
+  },
+  {
+    target: '#settings-color-secondary-picker',
+    title: 'Secondary Background',
+    content: 'This color sets the overall background of your app dashboard. Setting a dark color triggers a premium Dark Mode, while a bright color switches to a clean Light Mode automatically.',
+    position: 'bottom'
+  },
+  {
+    target: '#settings-color-accent-picker',
+    title: 'Highlight Accent',
+    content: 'This color highlights key elements like transaction notices, mobile money badges, stock warnings, and interactive elements.',
+    position: 'bottom'
+  },
+  {
+    target: '#settings-theme-presets-card',
+    title: 'Curated Presets',
+    content: 'Need inspiration? Click on any preset theme (Indigo Trust, Emerald Organic, or Rose Luxury) to apply a coordinated palette instantly.',
+    position: 'top'
+  }
+];
+
 export const Settings = () => {
   const { isAdmin, isTechnician, isActualTechnician, user: loggedInUser } = useRole();
   const isSystemTech = isTechnician || isActualTechnician;
@@ -63,6 +90,165 @@ export const Settings = () => {
     enterprise_id: ''
   });
   const [addStaffLoading, setAddStaffLoading] = useState(false);
+
+  // Tour states
+  const [tourActive, setTourActive] = useState(false);
+  const [currentStepIdx, setCurrentStepIdx] = useState(0);
+  const [activeElementRect, setActiveElementRect] = useState(null);
+
+  useEffect(() => {
+    if (!tourActive) {
+      setActiveElementRect(null);
+      return;
+    }
+
+    const step = SETTINGS_TOUR_STEPS[currentStepIdx];
+    if (!step) return;
+
+    // Scroll target into view
+    const el = document.querySelector(step.target);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+    }
+
+    let animationFrameId;
+    const updatePositions = () => {
+      const targetEl = document.querySelector(step.target);
+      if (targetEl) {
+        const rect = targetEl.getBoundingClientRect();
+        setActiveElementRect(prev => {
+          if (
+            prev &&
+            prev.top === rect.top &&
+            prev.left === rect.left &&
+            prev.width === rect.width &&
+            prev.height === rect.height
+          ) {
+            return prev;
+          }
+          return {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height,
+            bottom: rect.bottom,
+            right: rect.right
+          };
+        });
+      } else {
+        setActiveElementRect(null);
+      }
+      animationFrameId = requestAnimationFrame(updatePositions);
+    };
+
+    animationFrameId = requestAnimationFrame(updatePositions);
+
+    window.addEventListener('resize', updatePositions);
+    window.addEventListener('scroll', updatePositions, true);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener('resize', updatePositions);
+      window.removeEventListener('scroll', updatePositions, true);
+    };
+  }, [tourActive, currentStepIdx]);
+
+  const getHighlightStyle = () => {
+    if (!activeElementRect) return null;
+    
+    let leftVal = activeElementRect.left - 8;
+    let topVal = activeElementRect.top - 8;
+    let widthVal = activeElementRect.width + 16;
+    let heightVal = activeElementRect.height + 16;
+    
+    if (leftVal < 0) {
+      widthVal += leftVal;
+      leftVal = 0;
+    }
+    if (leftVal + widthVal > window.innerWidth) {
+      widthVal = window.innerWidth - leftVal;
+    }
+    if (topVal < 0) {
+      heightVal += topVal;
+      topVal = 0;
+    }
+    if (topVal + heightVal > window.innerHeight) {
+      heightVal = window.innerHeight - topVal;
+    }
+
+    return {
+      position: 'fixed',
+      left: `${leftVal}px`,
+      top: `${topVal}px`,
+      width: `${widthVal}px`,
+      height: `${heightVal}px`,
+      borderRadius: '12px',
+      boxShadow: '0 0 0 9999px rgba(15, 23, 42, 0.75)',
+      zIndex: 100000,
+      pointerEvents: 'none',
+      transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)'
+    };
+  };
+
+  const getPopoverStyle = (step) => {
+    if (!activeElementRect) return { display: 'none' };
+    
+    const margin = 16;
+    
+    const styles = {
+      position: 'fixed',
+      zIndex: 100001,
+      width: '280px',
+      backgroundColor: 'var(--bg-sidebar, #111827)',
+      border: '1px solid var(--border-sidebar, rgba(255, 255, 255, 0.15))',
+      borderRadius: '12px',
+      padding: '16px',
+      boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5), var(--shadow-lg)',
+      color: 'var(--text-primary)',
+      transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)'
+    };
+
+    let computedPosition = step.position;
+    if (window.innerWidth <= 640) {
+      if (computedPosition === 'left' || computedPosition === 'right' || !computedPosition) {
+        const elementCenterY = activeElementRect.top + activeElementRect.height / 2;
+        const viewportCenterY = window.innerHeight / 2;
+        computedPosition = elementCenterY < viewportCenterY ? 'bottom' : 'top';
+      }
+    }
+
+    if (computedPosition === 'bottom') {
+      styles.top = `${activeElementRect.bottom + margin}px`;
+      styles.left = `${activeElementRect.left + activeElementRect.width / 2 - 140}px`;
+    } else if (computedPosition === 'top') {
+      styles.top = `${activeElementRect.top - 180 - margin}px`;
+      styles.left = `${activeElementRect.left + activeElementRect.width / 2 - 140}px`;
+    } else if (computedPosition === 'left') {
+      styles.top = `${activeElementRect.top + activeElementRect.height / 2 - 90}px`;
+      styles.left = `${activeElementRect.left - 280 - margin}px`;
+    } else if (computedPosition === 'right') {
+      styles.top = `${activeElementRect.top + activeElementRect.height / 2 - 90}px`;
+      styles.left = `${activeElementRect.right + margin}px`;
+    }
+
+    // Keep popover inside screen borders
+    const numericLeft = parseFloat(styles.left);
+    if (!isNaN(numericLeft)) {
+      if (numericLeft < 12) styles.left = '12px';
+      if (numericLeft + 280 > window.innerWidth - 12) {
+        styles.left = `${window.innerWidth - 280 - 12}px`;
+      }
+    }
+    const numericTop = parseFloat(styles.top);
+    if (!isNaN(numericTop)) {
+      if (numericTop < 12) styles.top = '12px';
+      if (numericTop + 220 > window.innerHeight - 12) {
+        styles.top = `${window.innerHeight - 220 - 12}px`;
+      }
+    }
+
+    return styles;
+  };
 
   // Initialize branding form with current global values
   useEffect(() => {
@@ -379,11 +565,48 @@ export const Settings = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }} className="animate-fade-in">
       
       {/* Settings Header */}
-      <div>
-        <h1 style={{ fontSize: '1.8rem', marginBottom: '4px' }}>System Settings</h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
-          Customize store branding colors, manage staff accounts, and authorize roles.
-        </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <h1 style={{ fontSize: '1.8rem', marginBottom: '4px' }}>System Settings</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
+            Customize store branding colors, manage staff accounts, and authorize roles.
+          </p>
+        </div>
+        
+        <button
+          onClick={() => {
+            setTourActive(true);
+            setCurrentStepIdx(0);
+          }}
+          className="help-tour-btn"
+          style={{
+            background: 'rgba(59, 130, 246, 0.15)',
+            border: '1px solid rgba(59, 130, 246, 0.3)',
+            borderRadius: '10px',
+            padding: '6px 12px',
+            cursor: 'pointer',
+            color: '#60a5fa',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontSize: '0.8rem',
+            fontWeight: '600',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = 'rgba(59, 130, 246, 0.25)';
+            e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = 'rgba(59, 130, 246, 0.15)';
+            e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+          }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" style={{ width: '14px', height: '14px' }}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
+          </svg>
+          Help Tour
+        </button>
       </div>
 
       {/* Tabs Menu Selection */}
@@ -688,7 +911,7 @@ export const Settings = () => {
             </Card>
 
             {/* Curated Theme Presets */}
-            <Card title="Pre-Curated Color Presets" subtitle="Instantly apply premium color psychology visual themes.">
+            <Card id="settings-theme-presets-card" title="Pre-Curated Color Presets" subtitle="Instantly apply premium color psychology visual themes.">
               {subTier === 'free' && (
                 <div style={{
                   padding: '12px',
@@ -1259,6 +1482,51 @@ export const Settings = () => {
           </div>
         )}
       </Modal>
+
+      {/* Settings Help Tour Overlay */}
+      {tourActive && activeElementRect && (
+        <>
+          <div style={getHighlightStyle()} />
+          <div style={getPopoverStyle(SETTINGS_TOUR_STEPS[currentStepIdx])}>
+            <h4 style={{ margin: '0 0 8px 0', fontSize: '0.95rem', fontWeight: '800', color: 'var(--accent-color, #f59e0b)' }}>
+              {SETTINGS_TOUR_STEPS[currentStepIdx].title}
+            </h4>
+            <p style={{ margin: '0 0 16px 0', fontSize: '0.8rem', lineHeight: '1.4', color: 'var(--text-secondary)' }}>
+              {SETTINGS_TOUR_STEPS[currentStepIdx].content}
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                Step {currentStepIdx + 1} of {SETTINGS_TOUR_STEPS.length}
+              </span>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {currentStepIdx > 0 && (
+                  <button
+                    onClick={() => setCurrentStepIdx(prev => prev - 1)}
+                    style={{ background: 'none', border: 'none', color: '#60a5fa', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '700' }}
+                  >
+                    Back
+                  </button>
+                )}
+                {currentStepIdx < SETTINGS_TOUR_STEPS.length - 1 ? (
+                  <button
+                    onClick={() => setCurrentStepIdx(prev => prev + 1)}
+                    style={{ background: 'var(--primary-color)', border: 'none', color: '#fff', borderRadius: '6px', padding: '4px 10px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '700' }}
+                  >
+                    Next
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setTourActive(false)}
+                    style={{ background: 'var(--primary-color)', border: 'none', color: '#fff', borderRadius: '6px', padding: '4px 10px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '700' }}
+                  >
+                    Finish
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

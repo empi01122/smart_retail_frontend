@@ -1859,6 +1859,11 @@ label {
     max-height: none !important;
   }
 
+  .pos-cart-drawer-content {
+    bottom: 60px !important;
+    height: calc(100vh - 60px) !important;
+  }
+
   /* Eliminate nested scrolling constraints */
   #pos-product-grid {
     height: auto !important;
@@ -1958,7 +1963,9 @@ label {
   }
 
   #customer-search-filters {
-    display: contents !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
   }
 
   #customer-brand-header {
@@ -2027,6 +2034,10 @@ label {
   .catalog-error-state,
   .catalog-empty-state {
     order: 10 !important;
+  }
+
+  .catalog-testimonials-card {
+    order: 12 !important;
   }
 
   /* Inventory Header & Filter Stacking */

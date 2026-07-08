@@ -344,6 +344,10 @@ export const Storefront = () => {
   };
 
   const handlePrintDispatchReceipt = (order) => {
+    const originalTitle = document.title;
+    const receiptId = order.receipt_number || (`#${order.id}`);
+    document.title = receiptId;
+
     let container = document.getElementById('printable-receipt-container');
     if (!container) {
       container = document.createElement('div');
@@ -399,6 +403,7 @@ export const Storefront = () => {
     document.body.classList.add('is-printing-receipt');
 
     const cleanUp = () => {
+      document.title = originalTitle;
       document.body.classList.remove('is-printing-receipt');
       if (container && container.parentNode) {
         container.parentNode.removeChild(container);
@@ -869,6 +874,10 @@ export const Storefront = () => {
 
   const handlePrintReceipt = () => {
     if (!receipt) return;
+    const originalTitle = document.title;
+    const receiptId = receipt.receipt_number || (`#${receipt.id}`);
+    document.title = receiptId;
+
     let container = document.getElementById('printable-receipt-container');
     if (!container) {
       container = document.createElement('div');
@@ -928,6 +937,7 @@ export const Storefront = () => {
     document.body.classList.add('is-printing-receipt');
 
     const cleanUp = () => {
+      document.title = originalTitle;
       document.body.classList.remove('is-printing-receipt');
       if (container && container.parentNode) {
         container.parentNode.removeChild(container);
@@ -1730,7 +1740,19 @@ export const Storefront = () => {
       {notifOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1000 }}>
           <div onClick={() => setNotifOpen(false)} style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)' }} />
-          <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: '100%', maxWidth: '420px', backgroundColor: 'var(--bg-sidebar, #1e293b)', display: 'flex', flexDirection: 'column', boxShadow: '-8px 0 40px rgba(0,0,0,0.4)', overflow: 'hidden' }}>
+          <div style={{
+            position: 'absolute',
+            top: isMobileView ? '60px' : 0,
+            right: 0,
+            bottom: isMobileView ? '60px' : 0,
+            width: isMobileView ? '85vw' : '100%',
+            maxWidth: '420px',
+            backgroundColor: 'var(--bg-sidebar, #1e293b)',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '-8px 0 40px rgba(0,0,0,0.4)',
+            overflow: 'hidden'
+          }}>
 
             {/* Panel header */}
             <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-sidebar, rgba(255,255,255,0.07))', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: pendingOrders.length > 0 ? 'rgba(245,158,11,0.08)' : 'transparent' }}>
