@@ -1080,7 +1080,7 @@ export const Storefront = () => {
               <input
                 id="pos-search-input"
                 type="text"
-                placeholder="Search products by title, details or code..."
+                placeholder={isMobileView ? "Search products..." : "Search products by title, details or code..."}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 style={{

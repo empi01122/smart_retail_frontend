@@ -312,7 +312,7 @@ export const Products = () => {
             <input
               id="inventory-search-input"
               type="text"
-              placeholder="Search catalog by name or details..."
+              placeholder="Search catalog..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{ paddingLeft: '40px' }}
